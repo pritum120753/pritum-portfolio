@@ -2,7 +2,7 @@
 
 Built with React, Vite, Tailwind CSS and Framer Motion.
 
-Live: https://YOUR-SITE.netlify.app
+Live:https://YOUR-SITE.netlify.app](https://pritum-portfolio.netlify.app/
 
 ## Run locally
 ```
