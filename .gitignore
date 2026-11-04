@@ -1,2 +1,9 @@
-node_modules
-dist
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+coverage/
+.DS_Store
+frontend/public/resume.pdf
+frontend/public/sample-report.pdf

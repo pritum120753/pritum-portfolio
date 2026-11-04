@@ -1,0 +1,116 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  password     String
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  image       String?
+  liveUrl     String?
+  githubUrl   String?
+  technologies String[]
+  featured    Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Skill {
+  id        String   @id @default(uuid())
+  name      String
+  category  String
+  level     Int      @default(0)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Experience {
+  id          String   @id @default(uuid())
+  company     String
+  position    String
+  description String   @db.Text
+  startDate   DateTime
+  endDate     DateTime?
+  current     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Education {
+  id          String   @id @default(uuid())
+  institution String
+  degree      String
+  field       String?
+  description String?  @db.Text
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+model AboutContent {
+  id                 String   @id @default("main")
+  badge              String   @default("Who I Am")
+  heading            String   @default("Analytical mindset. Technical creativity.")
+  description        String   @db.Text
+  additionalText     String   @db.Text
+
+  experienceValue    String   @default("3+ Years")
+  experienceTitle    String   @default("Professional Experience")
+  experienceSubtitle String   @default("Supporting U.S. residential appraisal firms")
+
+  academicValue      String   @default("Computer Science")
+  academicTitle      String   @default("Academic Focus")
+  academicSubtitle   String   @default("Software development and system design")
+
+  interestsValue     String   @default("Data + Technology")
+  interestsTitle     String   @default("Core Interests")
+  interestsSubtitle  String   @default("Turning analysis into practical solutions")
+
+  updatedAt          DateTime @updatedAt
+}
+
+
+model SiteSettings {
+  id                 String   @id @default("main")
+  heroBadge          String   @default("👋 Welcome to my digital space")
+  heroName           String   @default("Pritum Kumar Shill")
+  heroTitles         String   @default("Computer Science Student\nFull Stack Developer\nAI Enthusiast\nData Science Explorer\nFuture Tech Professional 🚀")
+  heroDescription    String   @default("Building modern digital experiences, exploring AI and transforming ideas into real-world applications.") @db.Text
+  heroPrimaryText    String   @default("Explore My Work 🚀")
+  heroPrimaryUrl     String   @default("#projects")
+  heroResumeText     String   @default("📄 Download Resume")
+  heroResumeUrl      String   @default("/resume.pdf")
+  heroImage          String   @default("/profile-placeholder.png")
+  heroBadges         String   @default("Web Development\nData Analysis\nReal Estate Appraisal\nAI Tools") @db.Text
+  email              String   @default("pritumshill25@gmail.com")
+  phone              String   @default("")
+  location           String   @default("")
+  contactDescription String   @default("Whether it's about a project, collaboration, or a professional opportunity, feel free to reach out.") @db.Text
+  githubUrl          String   @default("https://github.com/pritum120753")
+  linkedinUrl        String   @default("https://www.linkedin.com/in/pritum-s-29ba582b9b4/")
+  footerName         String   @default("Pritum Kumar Shill")
+  footerDescription  String   @default("Building ideas into digital experiences.") @db.Text
+  footerCopyright    String   @default("All rights reserved.")
+  githubUsername     String   @default("pritum120753")
+  showGithubRepos    Boolean  @default(true)
+  updatedAt          DateTime @updatedAt
+}

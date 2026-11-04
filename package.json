@@ -1,24 +1,16 @@
 {
-  "name": "pritum-portfolio",
+  "name": "pritum-portfolio-platform",
+  "version": "2.0.0",
   "private": true,
-  "version": "1.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.1.0",
-    "framer-motion": "^12.0.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-parallax-tilt": "^1.7.0",
-    "react-simple-typewriter": "^5.0.1",
-    "tailwindcss": "^4.1.0"
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "dev:backend": "npm --prefix backend run dev",
+    "start:backend": "npm --prefix backend start",
+    "install:all": "npm install --prefix frontend && npm install --prefix backend",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\""
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.0",
-    "vite": "^6.0.0"
+    "concurrently": "^9.1.2"
   }
 }
