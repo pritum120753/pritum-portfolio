@@ -1,3 +1,4 @@
+import { loginRateLimiter } from "../middleware/login-rate-limit.middleware.js";
 
 import { Router } from "express";
 import {
@@ -12,7 +13,7 @@ import {
 
 const router = Router();
 
-router.post("/login", login);
+router.post("/login", loginRateLimiter, login);
 
 router.get(
   "/me",
