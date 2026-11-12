@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { apiRequest } from "../../services/api";
 
 const EMPTY_FORM = { name: "", email: "", password: "" };
@@ -43,6 +43,7 @@ function AdminManagement({ currentUser }) {
   }
 
   function startEdit(admin) {
+    if (admin.role !== "ADMIN") return;
     setShowPassword(false);
     setForm({ name: admin.name, email: admin.email, password: "" });
     setEditingId(admin.id);
@@ -85,6 +86,10 @@ function AdminManagement({ currentUser }) {
   }
 
   async function removeAdmin(admin) {
+    if (admin.role !== "ADMIN") {
+      setError("The Super Admin account is protected.");
+      return;
+    }
     if (admin.id === currentUser?.id) {
       setError("You cannot delete your own admin account.");
       return;
@@ -117,13 +122,14 @@ function AdminManagement({ currentUser }) {
     <>
       <div className="admin-heading">
         <h1>Admin Management</h1>
-        <p>Create and manage the people who can access your portfolio dashboard.</p>
+        <p>Manage regular Admin accounts. Only the Super Admin can access this page.</p>
       </div>
 
       <div className="admin-panel">
-        <h2>{editingId ? "Edit Admin Account" : "Add a New Admin"}</h2>
+        <h2>{editingId ? "Edit Admin Account" : "Add a Regular Admin"}</h2>
         <p className="admin-help">
-          All admin accounts have full dashboard access. Use a unique email and a password with at least 12 characters.
+          Regular Admins can manage portfolio content but cannot create, edit, or delete admin accounts.
+          The Super Admin account has protected, higher-level access.
         </p>
 
         {error && <div className="admin-error" role="alert">{error}</div>}
@@ -220,12 +226,17 @@ function AdminManagement({ currentUser }) {
           <div className="admin-admin-list">
             {admins.map((admin) => {
               const isCurrentUser = admin.id === currentUser?.id;
+              const isSuper = admin.role === "SUPER_ADMIN";
               return (
-                <div className="admin-admin-card" key={admin.id}>
+                <div className={`admin-admin-card ${isSuper ? "super-admin-card" : ""}`} key={admin.id}>
                   <div className="admin-admin-details">
                     <div className="admin-admin-name">
                       <h3>{admin.name}</h3>
                       {isCurrentUser && <span className="admin-you-label">You</span>}
+                      <span className={`admin-role-label ${isSuper ? "super-admin" : ""}`}>
+                        {isSuper && <ShieldCheck size={13} />}
+                        {isSuper ? "SUPER ADMIN" : "ADMIN"}
+                      </span>
                     </div>
                     <p>{admin.email}</p>
                     <span className="admin-admin-date">
@@ -235,17 +246,21 @@ function AdminManagement({ currentUser }) {
                     </span>
                   </div>
 
-                  <div className="admin-actions">
-                    <button type="button" onClick={() => startEdit(admin)}>Edit</button>
-                    <button
-                      type="button"
-                      onClick={() => removeAdmin(admin)}
-                      disabled={isCurrentUser || deletingId === admin.id}
-                      title={isCurrentUser ? "You cannot delete your own account" : "Delete admin"}
-                    >
-                      {deletingId === admin.id ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
+                  {isSuper ? (
+                    <span className="admin-protected-label">Protected account</span>
+                  ) : (
+                    <div className="admin-actions">
+                      <button type="button" onClick={() => startEdit(admin)}>Edit</button>
+                      <button
+                        type="button"
+                        onClick={() => removeAdmin(admin)}
+                        disabled={isCurrentUser || deletingId === admin.id}
+                        title={isCurrentUser ? "You cannot delete your own account" : "Delete admin"}
+                      >
+                        {deletingId === admin.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
