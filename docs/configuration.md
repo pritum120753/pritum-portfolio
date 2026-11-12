@@ -26,13 +26,19 @@ Do not store passwords, secrets, private keys, or connection strings in GitHub, 
 
 ## Admin provisioning
 
-`npm run create-admin` performs an upsert for the configured admin email and **replaces the password** if that account exists. Use it deliberately and clear provisioning variables when they are no longer needed.
+To safely promote an **existing Admin** without changing their password, set `SUPER_ADMIN_EMAIL` to that account's exact email in the backend environment and run:
 
-To make one account the Super Admin, set `ADMIN_EMAIL` and `SUPER_ADMIN_EMAIL` to the same email, set `ADMIN_NAME` and `ADMIN_PASSWORD` for that account, then run `npm run create-admin` against the production database. This promotes that account to `SUPER_ADMIN` and demotes any other existing Super Admin role to regular `ADMIN`. Keep these environment variables private and remove the temporary provisioning password after use.
+```bash
+npm run promote-super-admin
+```
+
+The promotion command only changes the role. It does not create a new account or reset the password. Any other account currently holding `SUPER_ADMIN` is automatically changed to regular `ADMIN`, so only one Super Admin remains.
+
+The older `npm run create-admin` command is for initial account provisioning or password reset. It replaces the password for the configured `ADMIN_EMAIL`; do not use it solely for promotion unless you intend to reset that password.
 
 The Super Admin is the only account allowed to open **Admin Management** and create, edit, or delete regular Admin accounts. Regular Admins can manage portfolio content but cannot manage user accounts. Admin Management cannot edit or delete the protected Super Admin account. Both roles are checked against the database on every protected API request, so role changes take effect even for sessions with an older JWT.
 
-Create at least one initial admin using the provisioning script before using the dashboard's Admin Management page. Do not place real credentials in source files or commit them to Git.
+Create at least one initial admin using the existing provisioning script before using the dashboard's Admin Management page. Do not place real credentials in source files or commit them to Git.
 
 ## Reverse proxy and login protection
 
