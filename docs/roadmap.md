@@ -26,6 +26,7 @@ Keep the site useful as a personal portfolio today while making it straightforwa
 - [ ] Add database backup and restore procedure
 
 ### Portfolio capabilities
+- [ ] Build an AI-powered job-tailored CV/resume builder (see [feature specification](ai-resume-builder.md))
 - [ ] Add a reusable content-section framework
 - [ ] Add project categories, tags, and filtering
 - [ ] Add project detail pages
