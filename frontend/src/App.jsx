@@ -37,7 +37,14 @@ function App() {
   const [experiences, setExperiences] = useState([]);
   const [educationItems, setEducationItems] = useState([]);
   const [about, setAbout] = useState(null);
-  const [siteSettings, setSiteSettings] = useState(null);
+  const [siteSettings, setSiteSettings] = useState(() => {
+    try {
+      const cached = localStorage.getItem("portfolio_site_settings_v1");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [githubRepos, setGithubRepos] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
@@ -62,6 +69,32 @@ function App() {
   useEffect(() => {
     let active = true;
 
+    const loadSiteSettings = async () => {
+      try {
+        const response = await apiRequest("/site-settings");
+        const settings = response?.settings || null;
+        if (!active || !settings) return;
+        setSiteSettings(settings);
+        try {
+          localStorage.setItem("portfolio_site_settings_v1", JSON.stringify(settings));
+        } catch {
+          // Keep the page working if browser storage is unavailable.
+        }
+      } catch (error) {
+        // Keep cached settings visible while the API is unavailable or waking up.
+        console.warn("Site settings could not be refreshed:", error);
+      }
+    };
+
+    loadSiteSettings();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
     const loadPortfolioData = async () => {
       try {
         setDataLoading(true);
@@ -73,19 +106,16 @@ function App() {
   experienceResponse,
   educationResponse,
   aboutResponse,
-  settingsResponse,
 ] = await Promise.all([
   apiRequest("/projects"),
   apiRequest("/skills"),
   apiRequest("/experiences"),
   apiRequest("/education"),
   apiRequest("/about"),
-  apiRequest("/site-settings"),
 ]);
 
         if (!active) return;
         setAbout(aboutResponse.about);
-        setSiteSettings(settingsResponse.settings);
 
         const projectItems = getCollection(
           projectResponse,
@@ -523,6 +553,9 @@ function App() {
               <img
                 src={siteSettings?.heroImage || "/profile-placeholder.png"}
                 alt={siteSettings?.heroName || "Profile photo"}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
               />
             </div>
 
