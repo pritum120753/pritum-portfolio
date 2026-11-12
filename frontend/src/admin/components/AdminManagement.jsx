@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "../../services/api";
 
 const EMPTY_FORM = { name: "", email: "", password: "" };
@@ -6,6 +7,7 @@ const EMPTY_FORM = { name: "", email: "", password: "" };
 function AdminManagement({ currentUser }) {
   const [admins, setAdmins] = useState([]);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [showPassword, setShowPassword] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,11 +37,13 @@ function AdminManagement({ currentUser }) {
   }
 
   function resetForm() {
+    setShowPassword(false);
     setForm(EMPTY_FORM);
     setEditingId(null);
   }
 
   function startEdit(admin) {
+    setShowPassword(false);
     setForm({ name: admin.name, email: admin.email, password: "" });
     setEditingId(admin.id);
     setError("");
@@ -156,17 +160,29 @@ function AdminManagement({ currentUser }) {
             <label htmlFor="admin-password">
               {editingId ? "New Password (optional)" : "Password"}
             </label>
-            <input
-              id="admin-password"
-              type="password"
-              value={form.password}
-              onChange={(event) => change("password", event.target.value)}
-              minLength={12}
-              maxLength={128}
-              autoComplete="new-password"
-              required={!editingId}
-              placeholder={editingId ? "Leave blank to keep the current password" : "At least 12 characters"}
-            />
+            <div className="password-field">
+              <input
+                id="admin-password"
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={(event) => change("password", event.target.value)}
+                minLength={12}
+                maxLength={128}
+                autoComplete="new-password"
+                required={!editingId}
+                placeholder={editingId ? "Leave blank to keep the current password" : "At least 12 characters"}
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {editingId && (
               <p className="admin-help">Leave this blank to keep the current password unchanged.</p>
             )}
