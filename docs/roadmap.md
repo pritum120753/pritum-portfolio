@@ -4,7 +4,7 @@ This roadmap is a planning document, not a claim that the listed work is already
 
 ## Guiding direction
 
-Keep the site useful as a personal portfolio today while making it straightforward to add new sections, integrations, and administrative capabilities later. Prefer small, independently testable features over a monolithic rewrite.
+Keep the public site focused on the personal portfolio while making it straightforward to add new sections, integrations, and administrative capabilities later. Prefer small, independently testable features over a monolithic rewrite.
 
 ## Suggested phases
 
@@ -25,8 +25,7 @@ Keep the site useful as a personal portfolio today while making it straightforwa
 - [ ] Add structured production logging and monitoring
 - [ ] Add database backup and restore procedure
 
-### Portfolio capabilities
-- [ ] Build an AI-powered job-tailored CV/resume builder (see [feature specification](ai-resume-builder.md))
+### Public portfolio capabilities
 - [ ] Add a reusable content-section framework
 - [ ] Add project categories, tags, and filtering
 - [ ] Add project detail pages
@@ -34,7 +33,8 @@ Keep the site useful as a personal portfolio today while making it straightforwa
 - [ ] Add SEO metadata and social sharing previews per page
 - [ ] Add accessibility and responsive regression checks
 
-### Admin experience
+### Private admin tools
+- [ ] Build a private, admin-only AI job-tailored CV/resume maker (see [feature specification](ai-resume-builder.md)). It must not appear in public navigation or be accessible to portfolio visitors.
 - [ ] Add search, filtering, and pagination for larger collections
 - [ ] Add draft/published status and preview workflow
 - [ ] Add content ordering controls
