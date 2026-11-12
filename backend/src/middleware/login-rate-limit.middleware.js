@@ -12,6 +12,12 @@ export function createLoginRateLimiter({
     const currentTime = now();
     const existing = requests.get(key);
 
+    if (requests.size > 5000) {
+      for (const [clientKey, bucket] of requests) {
+        if (currentTime >= bucket.resetAt) requests.delete(clientKey);
+      }
+    }
+
     if (!existing || currentTime >= existing.resetAt) {
       requests.set(key, { count: 1, resetAt: currentTime + windowMs });
       return next();
