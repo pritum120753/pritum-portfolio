@@ -32,7 +32,7 @@ Visitor → Netlify-hosted React frontend → Express REST API → Prisma → Po
 Admin   → /admin dashboard → JWT-protected API routes ────────┘
 ```
 
-See [architecture and API notes](docs/architecture.md) for additional details.
+See [architecture and API notes](docs/architecture.md), the [development guide](docs/development.md), and the [product roadmap](docs/roadmap.md) for how the project is organized and extended.
 
 ## Repository layout
 
