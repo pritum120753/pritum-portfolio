@@ -155,3 +155,8 @@ The portfolio, admin interface, REST API, and database models are implemented. O
 ---
 
 This repository contains personal portfolio content and source code. No open-source license is currently granted; contact the author for reuse permissions.
+
+
+## Repository audit
+
+See [docs/repository-audit.md](docs/repository-audit.md) for the source-based architecture, security, maintainability, and CI audit.
