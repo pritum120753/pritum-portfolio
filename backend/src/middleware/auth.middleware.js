@@ -1,5 +1,5 @@
-
 import jwt from "jsonwebtoken";
+import { prisma } from "../lib/prisma.js";
 
 export function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -26,13 +26,35 @@ export function authenticateToken(req, res, next) {
   }
 }
 
-export function requireAdmin(req, res, next) {
-  if (req.user?.role !== "ADMIN") {
-    return res.status(403).json({
-      success: false,
-      message: "Admin access required",
-    });
-  }
+export function createRequireAdmin(findUserById = (userId) =>
+  prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true },
+  })
+) {
+  return async function requireAdmin(req, res, next) {
+    if (req.user?.role !== "ADMIN" || !req.user?.userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required",
+      });
+    }
 
-  next();
+    try {
+      const user = await findUserById(req.user.userId);
+      if (!user || user.role !== "ADMIN") {
+        return res.status(403).json({
+          success: false,
+          message: "Admin access required",
+        });
+      }
+
+      req.admin = { id: user.id, role: user.role };
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  };
 }
+
+export const requireAdmin = createRequireAdmin();
