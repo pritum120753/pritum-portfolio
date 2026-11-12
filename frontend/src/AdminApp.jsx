@@ -8,6 +8,7 @@ import {
   GraduationCap,
   UserRound,
   Settings,
+  Users,
   LogOut,
   Menu,
   X,
@@ -19,6 +20,7 @@ import AdminOverview from "./admin/components/AdminOverview.jsx";
 import ResourceManager from "./admin/components/ResourceManager.jsx";
 import AboutManager from "./admin/components/AboutManager.jsx";
 import SiteSettingsManager from "./admin/components/SiteSettingsManager.jsx";
+import AdminManagement from "./admin/components/AdminManagement.jsx";
 import "./admin.css";
 
 function AdminApp() {
@@ -74,6 +76,7 @@ function AdminApp() {
     { label: "Education", path: "/admin/education", icon: GraduationCap },
     { label: "About Me", path: "/admin/about", icon: UserRound },
     { label: "Website Settings", path: "/admin/settings", icon: Settings },
+    { label: "Admin Management", path: "/admin/admins", icon: Users },
   ];
 
   return (
@@ -127,6 +130,7 @@ function AdminApp() {
   <Route path="education" element={<ResourceManager type="education" />} />
   <Route path="about" element={<AboutManager />} />
   <Route path="settings" element={<SiteSettingsManager />} />
+  <Route path="admins" element={<AdminManagement currentUser={user} />} />
   <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
 </Routes>
         </div>
