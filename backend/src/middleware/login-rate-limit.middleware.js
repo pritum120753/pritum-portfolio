@@ -1,7 +1,5 @@
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 10;
-const buckets = new Map();
-
 export function createLoginRateLimiter({
   windowMs = WINDOW_MS,
   maxAttempts = MAX_ATTEMPTS,
