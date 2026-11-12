@@ -25,3 +25,10 @@ Do not store passwords, secrets, private keys, or connection strings in GitHub, 
 ## Admin provisioning
 
 `npm run create-admin` performs an upsert for the configured admin email and **replaces the password** if that account exists. Use it deliberately and clear provisioning variables when they are no longer needed.
+
+
+## Reverse proxy and login protection
+
+The API includes an in-process login rate limiter (10 attempts per client IP per 15 minutes). When deploying behind one trusted reverse proxy such as Render, set `TRUST_PROXY=1` in the backend service environment so Express can identify the original client IP correctly. Keep it at `0` for direct/local development unless a trusted proxy is configured.
+
+The limiter stores counters in process memory. It is a useful single-instance baseline, but it is not shared across multiple backend instances and resets on process restart. For horizontally scaled production deployments, move rate-limit state to a shared store such as Redis before scaling beyond one instance.
