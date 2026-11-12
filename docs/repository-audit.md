@@ -115,3 +115,10 @@ The next priority should be to improve test coverage and security controls, then
 - Netlify build base: `frontend`.
 - CI: latest run for audited `main` commit completed successfully.
 - This was a source/configuration audit, not a live production penetration test or a full end-to-end test.
+
+
+## Security work completed after this audit
+
+The backend now validates login input types, email format, and maximum password length; applies an in-process limit of 10 login attempts per client IP per 15-minute window; returns HTTP 429 with a Retry-After header when the limit is reached; reduces the JSON request body limit to 1 MB; supports an explicit allowlist of comma-separated CORS origins; and has Node's built-in test runner coverage for token authentication, admin-role enforcement, login validation, and rate limiting.
+
+**Deployment note:** Set `TRUST_PROXY=1` in Render's backend environment when the service is behind Render's reverse proxy. The rate limiter is process-local; use a shared store before running multiple backend instances.
