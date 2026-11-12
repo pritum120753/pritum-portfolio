@@ -28,6 +28,7 @@ function AdminApp() {
   const [checking, setChecking] = useState(true);
   const [mobileMenu, setMobileMenu] = useState(false);
   const navigate = useNavigate();
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
   useEffect(() => {
     async function checkAuth() {
@@ -76,7 +77,9 @@ function AdminApp() {
     { label: "Education", path: "/admin/education", icon: GraduationCap },
     { label: "About Me", path: "/admin/about", icon: UserRound },
     { label: "Website Settings", path: "/admin/settings", icon: Settings },
-    { label: "Admin Management", path: "/admin/admins", icon: Users },
+    ...(isSuperAdmin
+      ? [{ label: "Admin Management", path: "/admin/admins", icon: Users }]
+      : []),
   ];
 
   return (
@@ -118,21 +121,31 @@ function AdminApp() {
             <Menu />
           </button>
           <span>Admin Workspace</span>
-          <span className="admin-user">{user.name}</span>
+          <span className="admin-user">
+            {user.name}
+            <span className={`admin-role-chip ${isSuperAdmin ? "super-admin" : ""}`}>
+              {isSuperAdmin ? "SUPER ADMIN" : "ADMIN"}
+            </span>
+          </span>
         </header>
 
         <div className="admin-content">
-         <Routes>
-  <Route path="dashboard" element={<AdminOverview user={user} />} />
-  <Route path="projects" element={<ResourceManager type="projects" />} />
-  <Route path="skills" element={<ResourceManager type="skills" />} />
-  <Route path="experience" element={<ResourceManager type="experience" />} />
-  <Route path="education" element={<ResourceManager type="education" />} />
-  <Route path="about" element={<AboutManager />} />
-  <Route path="settings" element={<SiteSettingsManager />} />
-  <Route path="admins" element={<AdminManagement currentUser={user} />} />
-  <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-</Routes>
+          <Routes>
+            <Route path="dashboard" element={<AdminOverview user={user} />} />
+            <Route path="projects" element={<ResourceManager type="projects" />} />
+            <Route path="skills" element={<ResourceManager type="skills" />} />
+            <Route path="experience" element={<ResourceManager type="experience" />} />
+            <Route path="education" element={<ResourceManager type="education" />} />
+            <Route path="about" element={<AboutManager />} />
+            <Route path="settings" element={<SiteSettingsManager />} />
+            <Route
+              path="admins"
+              element={isSuperAdmin
+                ? <AdminManagement currentUser={user} />
+                : <Navigate to="/admin/dashboard" replace />}
+            />
+            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+          </Routes>
         </div>
       </main>
     </div>
