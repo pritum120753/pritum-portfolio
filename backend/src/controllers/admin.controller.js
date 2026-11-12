@@ -17,9 +17,9 @@ const ADMIN_SELECT = {
 export async function listAdmins(_req, res, next) {
   try {
     const admins = await prisma.user.findMany({
-      where: { role: "ADMIN" },
+      where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
       select: ADMIN_SELECT,
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ role: "desc" }, { createdAt: "asc" }],
     });
 
     return res.json({ success: true, admins });
@@ -72,7 +72,7 @@ export async function updateAdmin(req, res, next) {
       select: { id: true, role: true },
     });
     if (!target || target.role !== "ADMIN") {
-      return res.status(404).json({ success: false, message: "Admin account not found" });
+      return res.status(404).json({ success: false, message: "Regular admin account not found" });
     }
 
     const data = { ...validation.data };
@@ -111,10 +111,12 @@ export async function deleteAdmin(req, res, next) {
       });
 
       if (!target || target.role !== "ADMIN") {
-        return { status: 404, message: "Admin account not found" };
+        return { status: 404, message: "Regular admin account not found" };
       }
 
-      const adminCount = await transaction.user.count({ where: { role: "ADMIN" } });
+      const adminCount = await transaction.user.count({
+        where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+      });
       const deletionError = getAdminDeletionError({
         actorId: req.user.userId,
         targetId: target.id,
