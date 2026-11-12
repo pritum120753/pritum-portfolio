@@ -15,6 +15,7 @@ import {
 import {
   authenticateToken,
   requireAdmin,
+  requireSuperAdmin,
 } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -28,9 +29,9 @@ router.get(
   getCurrentUser
 );
 
-router.get("/admins", authenticateToken, requireAdmin, listAdmins);
-router.post("/admins", authenticateToken, requireAdmin, createAdmin);
-router.patch("/admins/:id", authenticateToken, requireAdmin, updateAdmin);
-router.delete("/admins/:id", authenticateToken, requireAdmin, deleteAdmin);
+router.get("/admins", authenticateToken, requireSuperAdmin, listAdmins);
+router.post("/admins", authenticateToken, requireSuperAdmin, createAdmin);
+router.patch("/admins/:id", authenticateToken, requireSuperAdmin, updateAdmin);
+router.delete("/admins/:id", authenticateToken, requireSuperAdmin, deleteAdmin);
 
 export default router;
