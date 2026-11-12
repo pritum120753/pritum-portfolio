@@ -5,6 +5,12 @@ import {
   login,
   getCurrentUser,
 } from "../controllers/auth.controller.js";
+import {
+  listAdmins,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin,
+} from "../controllers/admin.controller.js";
 
 import {
   authenticateToken,
@@ -21,5 +27,10 @@ router.get(
   requireAdmin,
   getCurrentUser
 );
+
+router.get("/admins", authenticateToken, requireAdmin, listAdmins);
+router.post("/admins", authenticateToken, requireAdmin, createAdmin);
+router.patch("/admins/:id", authenticateToken, requireAdmin, updateAdmin);
+router.delete("/admins/:id", authenticateToken, requireAdmin, deleteAdmin);
 
 export default router;
