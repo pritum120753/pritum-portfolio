@@ -11,72 +11,11 @@ import {
   LogOut,
   Menu,
   X,
-  LockKeyhole,
   LoaderCircle,
 } from "lucide-react";
 import { apiRequest } from "./services/api";
+import AdminLogin from "./admin/components/AdminLogin.jsx";
 import "./admin.css";
-
-function Login({ onLogin }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const result = await apiRequest("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-
-      localStorage.setItem("admin_token", result.token);
-      onLogin(result.user);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="admin-login">
-      <form className="login-card" onSubmit={handleSubmit}>
-        <div className="login-icon"><LockKeyhole size={28} /></div>
-        <h1>Welcome Back</h1>
-        <p>Sign in to your portfolio dashboard</p>
-
-        <label>Email Address</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Admin email"
-          required
-        />
-
-        <label>Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Your password"
-          required
-        />
-
-        {error && <div className="admin-error">{error}</div>}
-
-        <button className="admin-primary" disabled={loading}>
-          {loading ? "Signing in..." : "Sign In"}
-        </button>
-      </form>
-    </div>
-  );
-}
 
 function Overview({ user }) {
   const [stats, setStats] = useState({
@@ -729,7 +668,7 @@ function AdminApp() {
   }
 
   if (!user) {
-    return <Login onLogin={(loggedInUser) => {
+    return <AdminLogin onLogin={(loggedInUser) => {
       setUser(loggedInUser);
       navigate("/admin/dashboard");
     }} />;
@@ -789,6 +728,7 @@ function AdminApp() {
 
         <div className="admin-content">
          <Routes>
+  <Route path="dashboard" element={<Overview user={user} />} />
   <Route path="projects" element={<ResourceManager type="projects" />} />
   <Route path="skills" element={<ResourceManager type="skills" />} />
   <Route path="experience" element={<ResourceManager type="experience" />} />
