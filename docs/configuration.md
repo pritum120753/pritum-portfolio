@@ -9,9 +9,11 @@ Create `backend/.env` from `backend/.env.example`. Never commit real secrets.
 | `JWT_EXPIRES_IN` | Backend | Optional token lifetime (default: `1d`) |
 | `CLIENT_ORIGIN` | Backend | Allowed frontend origin for CORS; no trailing slash |
 | `PORT` | Backend | Optional HTTP port (default: `5000`) |
-| `ADMIN_NAME` | Admin setup script | Name used when creating the admin |
+| `TRUST_PROXY` | Backend | Set to `1` behind one trusted reverse proxy |
+| `ADMIN_NAME` | Admin setup script | Name used when creating or updating an account |
 | `ADMIN_EMAIL` | Admin setup script | Email used for admin login |
 | `ADMIN_PASSWORD` | Admin setup script | Strong password, minimum 12 characters |
+| `SUPER_ADMIN_EMAIL` | Admin setup script | Designated email for the single Super Admin account |
 | `VITE_API_URL` | Frontend | Backend origin without `/api` (empty for local Vite proxy) |
 
 ## Deployment notes
@@ -26,21 +28,14 @@ Do not store passwords, secrets, private keys, or connection strings in GitHub, 
 
 `npm run create-admin` performs an upsert for the configured admin email and **replaces the password** if that account exists. Use it deliberately and clear provisioning variables when they are no longer needed.
 
+To make one account the Super Admin, set `ADMIN_EMAIL` and `SUPER_ADMIN_EMAIL` to the same email, set `ADMIN_NAME` and `ADMIN_PASSWORD` for that account, then run `npm run create-admin` against the production database. This promotes that account to `SUPER_ADMIN` and demotes any other existing Super Admin role to regular `ADMIN`. Keep these environment variables private and remove the temporary provisioning password after use.
+
+The Super Admin is the only account allowed to open **Admin Management** and create, edit, or delete regular Admin accounts. Regular Admins can manage portfolio content but cannot manage user accounts. Admin Management cannot edit or delete the protected Super Admin account. Both roles are checked against the database on every protected API request, so role changes take effect even for sessions with an older JWT.
+
+Create at least one initial admin using the provisioning script before using the dashboard's Admin Management page. Do not place real credentials in source files or commit them to Git.
 
 ## Reverse proxy and login protection
 
 The API includes an in-process login rate limiter (10 attempts per client IP per 15 minutes). When deploying behind one trusted reverse proxy such as Render, set `TRUST_PROXY=1` in the backend service environment so Express can identify the original client IP correctly. Keep it at `0` for direct/local development unless a trusted proxy is configured.
 
-The limiter stores counters in process memory. It is a useful single-instance baseline, but it is not shared across multiple backend instances and resets on process restart. For horizontally scaled production deployments, move rate-limit state to a shared store such as Redis before scaling beyond one instance.
-
-## Multiple admin accounts
-
-The Admin Dashboard includes an **Admin Management** page at `/admin/admins`. Any active `ADMIN` account can list, create, edit, and delete other admin accounts. New passwords must be 12–128 characters and are hashed with bcrypt before storage.
-
-For safety:
-- An admin cannot delete their own account from the dashboard.
-- The last remaining admin account cannot be deleted.
-- Deleting an account immediately revokes its access to protected API routes, even when that account still has an unexpired JWT.
-- All admins currently have the same full-access role; per-admin permissions are not implemented.
-
-Create at least one initial admin using the existing provisioning script before using the dashboard's Admin Management page. Do not place real credentials in source files or commit them to Git.
+The limiter stores counters in process memory. It is a useful single-instance baseline, but it is not shared across multiple backend instances and resets on process restart. For horizontally scaled production deployments, move rate-limit state to a shared store such as Redis before scaling beyond one backend instance.
