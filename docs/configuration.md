@@ -32,3 +32,15 @@ Do not store passwords, secrets, private keys, or connection strings in GitHub, 
 The API includes an in-process login rate limiter (10 attempts per client IP per 15 minutes). When deploying behind one trusted reverse proxy such as Render, set `TRUST_PROXY=1` in the backend service environment so Express can identify the original client IP correctly. Keep it at `0` for direct/local development unless a trusted proxy is configured.
 
 The limiter stores counters in process memory. It is a useful single-instance baseline, but it is not shared across multiple backend instances and resets on process restart. For horizontally scaled production deployments, move rate-limit state to a shared store such as Redis before scaling beyond one instance.
+
+## Multiple admin accounts
+
+The Admin Dashboard includes an **Admin Management** page at `/admin/admins`. Any active `ADMIN` account can list, create, edit, and delete other admin accounts. New passwords must be 12–128 characters and are hashed with bcrypt before storage.
+
+For safety:
+- An admin cannot delete their own account from the dashboard.
+- The last remaining admin account cannot be deleted.
+- Deleting an account immediately revokes its access to protected API routes, even when that account still has an unexpired JWT.
+- All admins currently have the same full-access role; per-admin permissions are not implemented.
+
+Create at least one initial admin using the existing provisioning script before using the dashboard's Admin Management page. Do not place real credentials in source files or commit them to Git.
