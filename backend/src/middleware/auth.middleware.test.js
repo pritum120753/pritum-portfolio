@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
 import {
   authenticateToken,
-  requireAdmin,
+  createRequireAdmin,
 } from "./auth.middleware.js";
 
 function createResponse() {
@@ -63,22 +63,48 @@ test("authenticateToken attaches verified claims", () => {
   }
 });
 
-test("requireAdmin rejects non-admin users", () => {
-  const req = { user: { role: "USER" } };
+test("requireAdmin rejects non-admin token claims without a database lookup", async () => {
+  const requireAdmin = createRequireAdmin(() => assert.fail("lookup must not run"));
+  const req = { user: { userId: "user-1", role: "USER" } };
   const res = createResponse();
 
-  requireAdmin(req, res, () => assert.fail("next must not be called"));
+  await requireAdmin(req, res, () => assert.fail("next must not be called"));
 
   assert.equal(res.statusCode, 403);
   assert.equal(res.payload.message, "Admin access required");
 });
 
-test("requireAdmin allows admin users", () => {
-  const req = { user: { role: "ADMIN" } };
+test("requireAdmin rejects deleted or demoted accounts", async () => {
+  const requireAdmin = createRequireAdmin(async () => null);
+  const req = { user: { userId: "deleted-admin", role: "ADMIN" } };
+  const res = createResponse();
+
+  await requireAdmin(req, res, () => assert.fail("next must not be called"));
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(res.payload.message, "Admin access required");
+});
+
+test("requireAdmin allows an existing admin account", async () => {
+  const requireAdmin = createRequireAdmin(async (id) => ({ id, role: "ADMIN" }));
+  const req = { user: { userId: "admin-1", role: "ADMIN" } };
   const res = createResponse();
   let nextCalled = false;
 
-  requireAdmin(req, res, () => { nextCalled = true; });
+  await requireAdmin(req, res, () => { nextCalled = true; });
 
   assert.equal(nextCalled, true);
+  assert.deepEqual(req.admin, { id: "admin-1", role: "ADMIN" });
+});
+
+test("requireAdmin forwards database errors to the error handler", async () => {
+  const databaseError = new Error("database unavailable");
+  const requireAdmin = createRequireAdmin(async () => { throw databaseError; });
+  const req = { user: { userId: "admin-1", role: "ADMIN" } };
+  const res = createResponse();
+  let forwardedError = null;
+
+  await requireAdmin(req, res, (error) => { forwardedError = error; });
+
+  assert.equal(forwardedError, databaseError);
 });
