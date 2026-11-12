@@ -9,6 +9,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "create-admin": "node src/scripts/create-admin.js",
+    "promote-super-admin": "node src/scripts/promote-super-admin.js",
     "test": "node --test",
     "check:syntax": "find src -type f -name '*.js' -print0 | xargs -0 -n1 node --check"
   },
