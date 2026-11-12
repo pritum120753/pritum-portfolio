@@ -35,10 +35,7 @@ export async function login(req, res, next) {
       });
     }
 
-    const passwordValid = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const passwordValid = await bcrypt.compare(password, user.password);
 
     if (!passwordValid) {
       return res.status(401).json({
@@ -47,7 +44,7 @@ export async function login(req, res, next) {
       });
     }
 
-    if (user.role !== "ADMIN") {
+    if (!["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
       return res.status(403).json({
         success: false,
         message: "Admin access required",
@@ -104,4 +101,3 @@ export async function getCurrentUser(req, res, next) {
     next(error);
   }
 }
-
