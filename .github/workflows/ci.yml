@@ -35,8 +35,11 @@ jobs:
         run: npm ci
         working-directory: backend
       - name: Validate backend JavaScript syntax
-        run: |
-          find src -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+        run: npm run check:syntax
+        working-directory: backend
+      - name: Run backend tests
+        run: npm test
+        working-directory: backend
       - name: Validate Prisma schema
         run: npx prisma validate
         working-directory: backend
