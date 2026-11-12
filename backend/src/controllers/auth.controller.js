@@ -1,3 +1,4 @@
+import { validateLoginInput } from "../lib/validate-login-input.js";
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -5,17 +6,26 @@ import { prisma } from "../lib/prisma.js";
 
 export async function login(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const credentials = validateLoginInput(req.body);
 
-    if (!email || !password) {
+    if (!credentials.valid) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: credentials.message,
+      });
+    }
+
+    const { email, password } = credentials;
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        success: false,
+        message: "Authentication is not configured",
       });
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email },
     });
 
     if (!user) {
