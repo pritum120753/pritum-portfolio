@@ -17,9 +17,18 @@ const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 
+app.set("trust proxy", process.env.TRUST_PROXY === "1" ? 1 : false);
+
+const allowedOrigins = CLIENT_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean);
+
 app.use(helmet());
-app.use(cors({ origin: CLIENT_ORIGIN }));
-app.use(express.json({ limit: "5mb" }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Origin not allowed by CORS"));
+  },
+}));
+app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 
 app.get("/api", (_req, res) => {
