@@ -13,14 +13,14 @@ Keep the public site focused on the personal portfolio while making it straightf
 - [x] Add environment configuration template
 - [x] Add CI build and schema checks
 - [ ] Extract public page into reusable sections and feature modules
-- [ ] Extract admin resource screens into feature modules
+- [x] Extract admin resource screens into feature modules
 - [ ] Introduce shared API response and error conventions
 - [ ] Add automated backend and frontend test suites
 
 ### Security and reliability
-- [ ] Add login rate limiting and abuse protection
+- [x] Add login rate limiting and abuse protection
 - [ ] Introduce consistent server-side request validation
-- [ ] Add security tests for admin authorization and CRUD endpoints
+- [ ] Expand security tests to cover all admin CRUD controllers
 - [ ] Review token storage and session strategy
 - [ ] Add structured production logging and monitoring
 - [ ] Add database backup and restore procedure
@@ -34,6 +34,7 @@ Keep the public site focused on the personal portfolio while making it straightf
 - [ ] Add accessibility and responsive regression checks
 
 ### Private admin tools
+- [x] Add multiple admin account management with create, edit, and protected delete
 - [ ] Build a private, admin-only AI job-tailored CV/resume maker (see [feature specification](ai-resume-builder.md)). It must not appear in public navigation or be accessible to portfolio visitors.
 - [ ] Add search, filtering, and pagination for larger collections
 - [ ] Add draft/published status and preview workflow
