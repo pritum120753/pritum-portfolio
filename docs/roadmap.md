@@ -19,7 +19,7 @@ This roadmap reflects the repository as reviewed on 2026-11-13. Checked items ar
 - [ ] Replace the process-local rate limiter with a shared store before horizontal scaling.
 - [ ] Review JWT localStorage storage and plan secure session handling.
 - [ ] Add structured logs, monitoring, health checks, and alerting.
-- [ ] Add persistent admin audit history.
+- [x] Add persistent Admin activity logs with before/after snapshots and Super Admin-only access.
 
 ## P1 — Testing and engineering quality
 
@@ -55,6 +55,9 @@ This roadmap reflects the repository as reviewed on 2026-11-13. Checked items ar
 
 - [x] Add multiple regular Admin accounts.
 - [x] Add a single Super Admin promotion workflow and protect Super Admin account management.
+- [x] Add self-service Admin display-name and password updates.
+- [x] Add section-level View/Create/Edit/Delete permissions controlled by Super Admin.
+- [x] Add Admin permission and data-change requests with Super Admin approval.
 - [ ] Add search, filtering, and pagination for larger collections.
 - [ ] Add draft/published status and preview workflow.
 - [ ] Add content ordering controls.
