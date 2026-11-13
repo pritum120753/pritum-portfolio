@@ -43,7 +43,7 @@ The older `npm run create-admin` command is for intentional initial account prov
 
 The Super Admin is the only account allowed to open **Admin Management** and create, edit, or delete regular Admin accounts. Regular Admins can manage portfolio content but cannot manage user accounts. Admin Management cannot edit or delete the protected Super Admin account. Both roles are checked against the database on every protected API request, so role changes take effect even for sessions with an older JWT.
 
-Create at least one initial admin using the existing provisioning script before using the dashboard's Admin Management page. Do not place real credentials in source files or commit them to Git.
+Create at least one initial admin using the provisioning script before using the dashboard's Admin Management page. Set `ALLOW_ADMIN_PROVISIONING=1` only for that intentional run, then reset it to `0` or remove it. Normal Render builds invoke the script but the script skips unless this flag is explicitly enabled. Do not place real credentials in source files or commit them to Git.
 
 ## Reverse proxy and login protection
 
