@@ -10,6 +10,7 @@ A responsive personal portfolio with a database-driven content management dashbo
 - Dynamic projects, skills, experience, education, About section, and site settings
 - Admin dashboard with separate **Super Admin** and **Admin** roles
 - Super Admin-only account management for creating, editing, and deleting regular Admin accounts
+- Section-level View/Create/Edit/Delete permissions, Admin self-service profile updates, approval requests, and Super Admin-only audit history
 - REST API built with Express
 - PostgreSQL persistence through Prisma ORM and tracked SQL migrations
 - JWT authentication and bcrypt password hashing
