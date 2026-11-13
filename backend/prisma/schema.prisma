@@ -16,6 +16,11 @@ model User {
   role         String   @default("ADMIN")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  permissions        AdminPermission[]
+  auditLogs          AuditLog[]      @relation("AuditActor")
+  submittedRequests  AdminRequest[]  @relation("RequestRequester")
+  reviewedRequests   AdminRequest[]  @relation("RequestReviewer")
 }
 
 model Project {
@@ -113,4 +118,66 @@ model SiteSettings {
   githubUsername     String   @default("pritum120753")
   showGithubRepos    Boolean  @default(true)
   updatedAt          DateTime @updatedAt
+}
+
+
+model AdminPermission {
+  id        String   @id @default(uuid())
+  userId    String
+  section   String
+  canView   Boolean  @default(false)
+  canCreate Boolean  @default(false)
+  canEdit   Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, section])
+  @@index([section])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  actorName String
+  actorEmail String
+  action    String
+  section   String
+  recordId  String?
+  summary   String
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([section, createdAt])
+}
+
+model AdminRequest {
+  id                   String   @id @default(uuid())
+  requesterId          String
+  reviewedById         String?
+  requestType          String
+  section              String
+  action               String
+  targetId             String?
+  title                String
+  message              String   @db.Text
+  payload              Json?
+  requestedPermissions Json?
+  status               String   @default("PENDING")
+  reviewNote           String?  @db.Text
+  createdAt            DateTime @default(now())
+  reviewedAt           DateTime?
+
+  requester User  @relation("RequestRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  reviewer  User? @relation("RequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([requesterId, createdAt])
 }
