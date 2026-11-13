@@ -1,0 +1,52 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "08:00"
+      timezone: Asia/Dhaka
+    open-pull-requests-limit: 5
+    groups:
+      root-npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "08:15"
+      timezone: Asia/Dhaka
+    open-pull-requests-limit: 5
+    groups:
+      frontend-npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "08:30"
+      timezone: Asia/Dhaka
+    open-pull-requests-limit: 5
+    groups:
+      backend-npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: wednesday
+      time: "08:45"
+      timezone: Asia/Dhaka
+    open-pull-requests-limit: 5
