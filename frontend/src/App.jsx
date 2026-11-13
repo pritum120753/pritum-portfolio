@@ -37,14 +37,8 @@ function App() {
   const [experiences, setExperiences] = useState([]);
   const [educationItems, setEducationItems] = useState([]);
   const [about, setAbout] = useState(null);
-  const [siteSettings, setSiteSettings] = useState(() => {
-    try {
-      const cached = localStorage.getItem("portfolio_site_settings_v1");
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [siteSettings, setSiteSettings] = useState(null);
+  const [siteSettingsLoading, setSiteSettingsLoading] = useState(true);
   const [githubRepos, setGithubRepos] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
@@ -71,18 +65,41 @@ function App() {
 
     const loadSiteSettings = async () => {
       try {
-        const response = await apiRequest("/site-settings");
-        const settings = response?.settings || null;
-        if (!active || !settings) return;
+        // Always request the latest settings first; do not render stale local data.
+        const response = await apiRequest("/site-settings", { cache: "no-store" });
+        const settings = response?.settings;
+
+        if (!settings || typeof settings !== "object") {
+          throw new Error("The latest website settings were not returned by the API.");
+        }
+
+        if (!active) return;
         setSiteSettings(settings);
+
         try {
           localStorage.setItem("portfolio_site_settings_v1", JSON.stringify(settings));
         } catch {
           // Keep the page working if browser storage is unavailable.
         }
       } catch (error) {
-        // Keep cached settings visible while the API is unavailable or waking up.
-        console.warn("Site settings could not be refreshed:", error);
+        console.warn("Latest site settings could not be loaded; using cached settings as a fallback.", error);
+
+        // Cached settings are used only when the live API request fails.
+        if (active) {
+          try {
+            const cached = localStorage.getItem("portfolio_site_settings_v1");
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (parsed && typeof parsed === "object") {
+                setSiteSettings(parsed);
+              }
+            }
+          } catch {
+            // Continue with the built-in defaults if cached data is unavailable or invalid.
+          }
+        }
+      } finally {
+        if (active) setSiteSettingsLoading(false);
       }
     };
 
@@ -255,6 +272,31 @@ function App() {
       .join(" • "),
     description: item.description || "",
   }));
+
+  if (siteSettingsLoading) {
+    return (
+      <main
+        className="flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-6 text-white"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading the latest portfolio content"
+      >
+        <div className="flex w-full max-w-md flex-col items-center text-center">
+          <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-400/30 bg-blue-500/10 shadow-lg shadow-blue-500/10">
+            <span className="text-2xl font-black tracking-tight text-blue-300">P.</span>
+          </div>
+          <div className="mb-5 h-9 w-9 animate-spin rounded-full border-2 border-white/10 border-t-blue-400" />
+          <h1 className="text-xl font-semibold tracking-tight">Loading the latest portfolio</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Connecting to live content and profile settings...
+          </p>
+          <div className="mt-8 h-1 w-40 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-blue-400 to-purple-500" />
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div
