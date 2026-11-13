@@ -108,7 +108,7 @@ The tree contains both the active `frontend/src/` app and legacy root-level `src
 
 ### Stray root-level file
 
-The root contains a zero-byte file named `git`. It appears to be an accidental artifact and should be removed after confirming no external process depends on it.
+The root-level zero-byte file named `git` was removed during this audit as an accidental artifact.
 
 ### One-off script
 
@@ -116,7 +116,7 @@ The root contains a zero-byte file named `git`. It appears to be an accidental a
 
 ### Tooling gaps
 
-- Weekly Dependabot updates are now configured for the root, frontend, backend, and GitHub Actions.
+- Weekly Dependabot updates are configured for the root, frontend, backend, and GitHub Actions. Several separate major-version PRs have been opened; the Vite 8 / React plugin major update PRs currently fail dependency installation because their peer-version ranges do not match. Do not merge major-version PRs until compatibility work is reviewed.
 - CI now audits frontend and backend dependencies for high-severity vulnerabilities.
 - CI uses pinned current GitHub Actions versions and Node.js 24.
 - No formatter/linter is configured.
@@ -157,7 +157,7 @@ The connected Render API service's build command currently runs `npm run create-
 - Main branch: 1 branch (`main`).
 - GitHub open issues: 0 at audit time.
 - Pull requests and releases: none found in the reviewed API listing.
-- CI: updated frontend build, high-severity dependency audits, backend syntax/tests, and Prisma validation all passed after the CI changes.
+- CI: updated frontend build, high-severity dependency audits, backend syntax/tests, and Prisma validation passed on the main-branch run after the CI changes.
 - Render API: current backend deployment reported Live during the initial infrastructure review.
 - Render PostgreSQL: Free plan, available at audit time, expiry reported as 2026-12-04.
 - Production Site Settings: `heroResumeUrl = "/resume.pdf"`; `heroImage` is a Base64 data URL of approximately 321,131 characters.
