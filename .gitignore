@@ -7,3 +7,5 @@ coverage/
 .DS_Store
 frontend/public/resume.pdf
 frontend/public/sample-report.pdf
+/database-backups/
+*.dump
