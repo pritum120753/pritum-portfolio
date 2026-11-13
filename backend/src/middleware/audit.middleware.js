@@ -21,7 +21,7 @@ const RESPONSE_KEY_BY_SECTION = {
 function safeSnapshot(value, key = "") {
   if (value == null) return value;
   if (/password|token|secret|authorization/i.test(key)) return "[redacted]";
-  if (key === "heroImage" && typeof value === "string" && value.startsWith("data:")) {
+  if (/image|photo|avatar/i.test(key) && typeof value === "string" && value.startsWith("data:")) {
     return "[image data omitted]";
   }
   if (typeof value === "string") {
@@ -78,7 +78,7 @@ export function auditMutation(section, action) {
             DELETE: `Deleted ${section} record`,
           }[action];
 
-          prisma.auditLog.create({
+          return prisma.auditLog.create({
             data: {
               actorId: req.admin?.id || req.user?.userId || null,
               actorName: req.admin?.name || "Unknown admin",
@@ -90,8 +90,9 @@ export function auditMutation(section, action) {
               before: before ? safeSnapshot(before) : undefined,
               after: after ? safeSnapshot(after) : undefined,
             },
-          }).catch((error) => {
+          }).then(() => sendJson(payload)).catch((error) => {
             console.error("Could not write admin audit log:", error.message);
+            return sendJson(payload);
           });
         }
 
