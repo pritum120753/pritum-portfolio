@@ -85,7 +85,7 @@ function snapshot(value) {
       .filter(([key]) => !/password|token|secret/i.test(key))
       .map(([key, item]) => [
         key,
-        key === "heroImage" && typeof item === "string" && item.startsWith("data:")
+        /image|photo|avatar/i.test(key) && typeof item === "string" && item.startsWith("data:")
           ? "[image data omitted]"
           : snapshot(item),
       ]));
@@ -275,6 +275,7 @@ async function applyApprovedDataChange(transaction, request) {
   const delegate = transaction[config.model];
 
   if (request.action === "DELETE") {
+    if (config.singleton) throw new Error("The About and Website Settings records cannot be deleted.");
     if (!request.targetId) throw new Error("A target record is required.");
     const existing = await delegate.findUnique({ where: { id: request.targetId } });
     if (!existing) throw new Error("The requested record no longer exists.");
@@ -334,6 +335,9 @@ export async function reviewAdminRequest(req, res, next) {
           if (requested[key] !== undefined && typeof requested[key] !== "boolean") {
             throw new Error("The requested permission values are invalid.");
           }
+        }
+        if ((requested.canCreate || requested.canEdit || requested.canDelete) && !requested.canView) {
+          throw new Error("Create, Edit and Delete permissions require View permission.");
         }
         const permission = await transaction.adminPermission.upsert({
           where: { userId_section: { userId: request.requesterId, section: request.section } },
