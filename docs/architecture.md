@@ -73,9 +73,8 @@ Prisma defines `User`, `Project`, `Skill`, `Experience`, `Education`, `AboutCont
 - Login requests are limited to 10 attempts per client IP per 15-minute window. The counter store is process-local and should be replaced with a shared store before scaling beyond one instance.
 - Validation exists for login, Admin account creation/update, Projects (partial), Skills (partial), About, and Site Settings. Experience and Education validation, URL protocols, dates, numeric fields, and cross-field rules need more comprehensive schemas.
 - The frontend stores the JWT in `localStorage`; consider an HttpOnly cookie session with CSRF defenses in a separately planned security change.
-- The profile picture picker currently stores a Base64 data URL in `SiteSettings.heroImage`. The UI permits up to 3 MB, but the API JSON body limit is 1 MB, so larger selections fail. A proper object-storage upload endpoint is the long-term solution.
+- The profile picture picker limits new files to 650 KiB and avoids resending an unchanged image on unrelated settings updates. The picture is still saved as a Base64 data URL in `SiteSettings.heroImage`; object storage is the long-term solution.
 - Public Site Settings responses include the configured image value; large Base64 images increase response and database size.
 - The API currently has a basic JSON error handler and no structured request correlation/monitoring.
 - Public collection endpoints return all records; pagination is not yet implemented.
 - Core backend tests exist, but there are no frontend unit/component or end-to-end tests yet.
-
