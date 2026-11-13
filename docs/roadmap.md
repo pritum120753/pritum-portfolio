@@ -1,54 +1,73 @@
 # Product roadmap
 
-This roadmap is a planning document, not a claim that the listed work is already implemented. Priorities can change as the portfolio grows.
+This roadmap reflects the repository as reviewed on 2026-11-13. Checked items are implemented in the source tree; unchecked items remain planned or incomplete.
 
-## Guiding direction
+## P0 — Production data durability
 
-Keep the public site focused on the personal portfolio while making it straightforward to add new sections, integrations, and administrative capabilities later. Prefer small, independently testable features over a monolithic rewrite.
+- [ ] Move the portfolio database to a durable plan/provider with backups before the current Render Free PostgreSQL expiration.
+- [ ] Export and verify a restorable database backup.
+- [ ] Write and test a documented recovery procedure.
 
-## Suggested phases
+## P1 — Security and reliability
 
-### Foundation and maintainability
-- [x] Document current architecture and API surface
-- [x] Add environment configuration template
-- [x] Add CI build and schema checks
-- [ ] Extract public page into reusable sections and feature modules
-- [x] Extract admin resource screens into feature modules
-- [ ] Introduce shared API response and error conventions
-- [ ] Add automated backend and frontend test suites
+- [x] Add login input validation and an in-process login rate limiter.
+- [x] Add database-backed Admin and Super Admin role checks.
+- [x] Restrict Admin Management to Super Admin.
+- [ ] Enforce a single Super Admin at the database level.
+- [ ] Add consistent schema validation to every CRUD endpoint.
+- [ ] Validate URL schemes, date ranges, booleans, integers, and string length limits.
+- [ ] Replace the process-local rate limiter with a shared store before horizontal scaling.
+- [ ] Review JWT localStorage storage and plan secure session handling.
+- [ ] Add structured logs, monitoring, health checks, and alerting.
+- [ ] Add persistent admin audit history.
 
-### Security and reliability
-- [x] Add login rate limiting and abuse protection
-- [ ] Introduce consistent server-side request validation
-- [ ] Expand security tests to cover all admin CRUD controllers
-- [ ] Review token storage and session strategy
-- [ ] Add structured production logging and monitoring
-- [ ] Add database backup and restore procedure
+## P1 — Testing and engineering quality
 
-### Public portfolio capabilities
-- [ ] Add a reusable content-section framework
-- [ ] Add project categories, tags, and filtering
-- [ ] Add project detail pages
-- [ ] Add media upload/storage integration with file validation
-- [ ] Add SEO metadata and social sharing previews per page
-- [ ] Add accessibility and responsive regression checks
+- [x] Add backend tests for core authentication, authorization, login validation, Admin input validation, and rate limiting.
+- [x] Add GitHub Actions checks for frontend build, backend syntax, backend tests, and Prisma schema validation.
+- [ ] Add frontend unit/component tests for login, forms, and admin flows.
+- [ ] Add end-to-end smoke tests for the public site and Admin Dashboard.
+- [ ] Add controller integration tests for every CRUD resource.
+- [ ] Add automated accessibility checks and responsive regression checks.
+- [ ] Add formatting/lint rules and enforce them in CI.
+- [ ] Add Dependabot updates and automated dependency vulnerability monitoring.
 
-### Private admin tools
-- [x] Add multiple admin account management with create, edit, and protected delete
-- [ ] Build a private, admin-only AI job-tailored CV/resume maker (see [feature specification](ai-resume-builder.md)). It must not appear in public navigation or be accessible to portfolio visitors.
-- [ ] Add search, filtering, and pagination for larger collections
-- [ ] Add draft/published status and preview workflow
-- [ ] Add content ordering controls
-- [ ] Add audit history for important admin changes
-- [ ] Add confirmation and recovery patterns for destructive actions
+## P1 — Repository and deployment hygiene
 
-### Integrations and insights
-- [ ] Add optional analytics with privacy-conscious configuration
-- [ ] Add contact message delivery and spam protection
-- [ ] Add integration settings with server-side secret storage
-- [ ] Add export/backup tools for portfolio content
+- [ ] Review root-level legacy `src/`, `public/`, Vite files, and the empty root-level `git` file before cleanup.
+- [ ] Review root-level `resume.pdf` and `sample-report.pdf` for intentional public disclosure and client confidentiality.
+- [ ] Fix the default resume/sample-report asset paths so they resolve from the active `frontend/` build.
+- [ ] Replace Base64 profile-image storage with validated object storage and signed/public URLs as appropriate.
+- [ ] Add staging/preview deployment verification and rollback notes.
+- [ ] Add database backup and restore monitoring.
 
-## How to prioritize
+## P2 — Public portfolio capabilities
+
+- [ ] Extract the large public `App.jsx` component into reusable sections and feature modules.
+- [ ] Add project categories, tags, filtering, and detail pages.
+- [ ] Add robust image/media upload and storage with file validation.
+- [ ] Add SEO metadata, sitemap, robots rules, and social sharing previews.
+- [ ] Improve accessibility semantics, labels, keyboard navigation, and contrast.
+- [ ] Add performance budgets and Lighthouse checks.
+
+## P2 — Private Admin tools
+
+- [x] Add multiple regular Admin accounts.
+- [x] Add a single Super Admin promotion workflow and protect Super Admin account management.
+- [ ] Add search, filtering, and pagination for larger collections.
+- [ ] Add draft/published status and preview workflow.
+- [ ] Add content ordering controls.
+- [ ] Add confirmation and recovery patterns for destructive actions.
+- [ ] Build a private, Admin-only AI job-tailored CV/resume maker (see [feature specification](ai-resume-builder.md)); it must not appear in public navigation.
+
+## P3 — Integrations and insights
+
+- [ ] Improve contact-form spam protection and message delivery/notifications.
+- [ ] Add privacy-conscious optional analytics.
+- [ ] Add export/backup tools for portfolio content.
+- [ ] Add integration settings with server-side secret storage.
+
+## Prioritization rules
 
 For each proposed feature, record:
 
