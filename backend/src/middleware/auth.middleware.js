@@ -163,7 +163,7 @@ export function createRequireSectionPermission(findUserById = (userId) =>
         }
 
         const permission = user.permissions?.find((item) => item.section === section);
-        if (!permission?.[permissionField]) {
+        if (!permission?.canView || !permission?.[permissionField]) {
           return res.status(403).json({
             success: false,
             code: "SECTION_PERMISSION_REQUIRED",
