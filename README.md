@@ -107,21 +107,23 @@ For a separate frontend deployment, set `VITE_API_URL` to the backend origin wit
 
 ## Admin access
 
-The admin UI is available at `/admin`.
+The Admin UI is available at `/admin`.
 
-- **Super Admin:** can manage website content and manage regular Admin accounts.
-- **Admin:** can manage website content but cannot create, edit, or delete admin accounts.
+- **Super Admin:** unrestricted content access; can manage regular Admin accounts, assign section permissions, review requests, and view audit history.
+- **Admin:** can manage only the sections/actions granted by the Super Admin, update their own display name/password, and submit permission or data-change requests.
 
-Admin passwords must be at least 12 characters and are stored as bcrypt hashes. To create an initial account, configure `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in `backend/.env`, then run:
+New regular Admin accounts start with no content-section permissions. The Super Admin assigns View, Create, Edit, and Delete rights under **Permission Control**. Existing Admins retain their previous full content access after the governance migration.
+
+Admin passwords must be at least 12 characters and are stored as bcrypt hashes. For intentional initial account provisioning, set `ALLOW_ADMIN_PROVISIONING=1`, then configure `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in `backend/.env` and run:
 
 ```bash
 cd backend
 npm run create-admin
 ```
 
-This command creates or updates the account with the configured email and replaces its password. Do not rerun it casually in production.
+The provisioning command creates or updates the configured account and replaces its password. It safely skips unless the explicit opt-in flag is set, protecting normal Render deployments.
 
-To promote an existing account without changing its password, use the documented `npm run promote-super-admin` command or the repository's manual **Promote Super Admin** GitHub Actions workflow. See [Admin provisioning](docs/configuration.md). Never place database credentials in source files or workflow inputs; use protected repository secrets.
+To promote an existing account without changing its password, use the documented `npm run promote-super-admin` command or the repository's manual **Promote Super Admin** GitHub Actions workflow. See [Admin provisioning](docs/configuration.md) and the [Admin Governance Guide](docs/admin-governance.md). Never place database credentials in source files or workflow inputs; use protected repository secrets.
 
 ## API overview
 
@@ -131,6 +133,11 @@ To promote an existing account without changing its password, use the documented
 | POST | `/api/auth/login` | Public, rate limited |
 | GET | `/api/auth/me` | Admin or Super Admin |
 | GET | `/api/auth/admins` | Super Admin |
+| PATCH | `/api/auth/profile` | Admin or Super Admin |
+| PUT | `/api/auth/admins/:id/permissions` | Super Admin |
+| GET/POST | `/api/auth/requests` | Admin sees own; Super Admin sees all |
+| PATCH | `/api/auth/requests/:id/review` | Super Admin |
+| GET | `/api/auth/audit-logs` | Super Admin |
 | POST/PATCH/DELETE | `/api/auth/admins` and `/api/auth/admins/:id` | Super Admin |
 | GET | Portfolio resource routes | Public |
 | POST/PUT/DELETE | Content resource endpoints | Admin or Super Admin |
@@ -153,7 +160,8 @@ Netlify uses the checked-in `netlify.toml` to build `frontend/`. Render hosts th
 
 - Never commit `.env` files, database credentials, JWT secrets, or admin tokens.
 - Login attempts are limited to 10 per client IP per 15-minute window. The current limiter is process-local and is not shared across multiple backend instances.
-- Admin write routes check the active database role on each request. Admin-account management requires the Super Admin role.
+- Admin write routes check the active database role and section permission on each request. Admin-account management, permission control, approval review, and audit history require the Super Admin role.
+- Successful changes are recorded in an application-level audit log with before/after snapshots. Passwords, tokens, secrets, and embedded image payloads are excluded.
 - Request validation is present for core login, admin-account, project, skill, About, and settings fields, but CRUD validation is not yet comprehensive.
 - The browser currently stores the JWT in `localStorage`; an XSS vulnerability could expose it. A future session redesign should evaluate HttpOnly cookies and CSRF protections.
 - Review downloadable documents and profile assets for personal or client-confidential information before publishing them in this public repository.
