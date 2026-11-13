@@ -36,7 +36,7 @@ Visitor → Netlify-hosted React frontend → Express REST API → Prisma → Po
 Admin   → /admin dashboard → JWT-protected API routes ────────┘
 ```
 
-See [architecture and API notes](docs/architecture.md), the [development guide](docs/development.md), [environment configuration](docs/configuration.md), the [Admin Governance Guide](docs/admin-governance.md), and the [product roadmap](docs/roadmap.md).
+See [architecture and API notes](docs/architecture.md), the [development guide](docs/development.md), [environment configuration](docs/configuration.md), the [Admin Governance Guide](docs/admin-governance.md), the [database backup and expiry runbook](docs/database-backup-and-expiry.md), and the [product roadmap](docs/roadmap.md).
 
 ## Repository layout
 
