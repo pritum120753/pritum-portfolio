@@ -6,14 +6,16 @@ A responsive personal portfolio with a database-driven content management dashbo
 
 ## Highlights
 
-- Responsive portfolio interface with React, Vite, Tailwind CSS, and Framer Motion
+- Responsive portfolio interface built with React, Vite, Tailwind CSS, and Framer Motion
 - Dynamic projects, skills, experience, education, About section, and site settings
-- Admin dashboard for content management
+- Admin dashboard with separate **Super Admin** and **Admin** roles
+- Super Admin-only account management for creating, editing, and deleting regular Admin accounts
 - REST API built with Express
-- PostgreSQL persistence through Prisma ORM
-- Admin authentication using JWT and bcrypt password hashing
+- PostgreSQL persistence through Prisma ORM and tracked SQL migrations
+- JWT authentication and bcrypt password hashing
+- Login rate limiting and database-backed role checks
 - Contact form integrated with Netlify Forms
-- Frontend deployment on Netlify; backend and database hosted separately
+- Frontend deployment on Netlify; backend and database hosted separately on Render
 
 ## Technology
 
@@ -23,7 +25,8 @@ A responsive personal portfolio with a database-driven content management dashbo
 | Backend | Node.js, Express 4 |
 | Database | PostgreSQL, Prisma 6 |
 | Authentication | JWT, bcryptjs |
-| Hosting | Netlify (frontend), Render (backend) |
+| Hosting | Netlify (frontend), Render (backend and database) |
+| Automation | GitHub Actions, Dependabot |
 
 ## Architecture
 
@@ -32,31 +35,33 @@ Visitor → Netlify-hosted React frontend → Express REST API → Prisma → Po
 Admin   → /admin dashboard → JWT-protected API routes ────────┘
 ```
 
-See [architecture and API notes](docs/architecture.md), the [development guide](docs/development.md), and the [product roadmap](docs/roadmap.md) for how the project is organized and extended.
+See [architecture and API notes](docs/architecture.md), the [development guide](docs/development.md), [environment configuration](docs/configuration.md), and the [product roadmap](docs/roadmap.md).
 
 ## Repository layout
 
 ```text
-frontend/             React application and admin dashboard
+frontend/                 Active React/Vite application and admin dashboard
   src/
-    App.jsx           Public portfolio
-    AdminApp.jsx      Admin dashboard
-    services/api.js   API request helper
-backend/              Express REST API
-  src/controllers/    Request handlers
-  src/routes/         Public and protected routes
-  src/middleware/     Authentication and authorization
-  prisma/             Schema and migrations
-docs/                 Technical documentation
-netlify.toml          Frontend build settings
-package.json          Workspace convenience scripts
+    App.jsx               Public portfolio
+    AdminApp.jsx          Admin dashboard and role-aware navigation
+    admin/components/     Admin feature components
+    services/api.js       Shared API request helper
+backend/                  Express REST API
+  src/controllers/        HTTP request handlers
+  src/routes/             Public and protected API routes
+  src/middleware/         Authentication, authorization, and rate limiting
+  src/lib/                Prisma and input validation helpers
+  prisma/                 Schema and SQL migrations
+docs/                     Architecture, configuration, audit, and roadmap
+.github/workflows/        CI and manual Super Admin promotion
+netlify.toml              Netlify build configuration
 ```
 
-> The repository also contains some legacy root-level frontend files. The deployed frontend is built from `frontend/`; avoid removing legacy files until their references have been verified.
+> Legacy root-level `src/`, `public/`, and Vite files remain in the repository. Netlify builds from `frontend/`; do not edit or delete the legacy copy without first comparing its assets and references.
 
 ## Local setup
 
-**Prerequisites:** Node.js 20+, npm, and a PostgreSQL database.
+**Prerequisites:** Node.js 20 or newer, npm, and a PostgreSQL database.
 
 1. Clone the repository:
 
@@ -78,7 +83,7 @@ package.json          Workspace convenience scripts
    cp backend/.env.example backend/.env
    ```
 
-   Update `backend/.env` with a valid `DATABASE_URL`, a strong `JWT_SECRET`, and other local settings. Do not commit your `.env` files.
+   Update `backend/.env` with a valid `DATABASE_URL`, a strong `JWT_SECRET`, and other local settings. Never commit the file.
 
 4. Prepare Prisma:
 
@@ -97,56 +102,65 @@ package.json          Workspace convenience scripts
 
 The frontend runs at **http://localhost:5173** and the backend at **http://localhost:5000**. Vite proxies local `/api` requests to the backend.
 
-For a separate frontend deployment, configure `VITE_API_URL` to the backend origin (without `/api`). See [environment configuration](docs/configuration.md).
+For a separate frontend deployment, set `VITE_API_URL` to the backend origin without the `/api` suffix. See [environment configuration](docs/configuration.md).
 
-### Admin access
+## Admin access
 
-After setting `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in `backend/.env`, run:
+The admin UI is available at `/admin`.
+
+- **Super Admin:** can manage website content and manage regular Admin accounts.
+- **Admin:** can manage website content but cannot create, edit, or delete admin accounts.
+
+Admin passwords must be at least 12 characters and are stored as bcrypt hashes. To create an initial account, configure `ADMIN_NAME`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` in `backend/.env`, then run:
 
 ```bash
 cd backend
 npm run create-admin
 ```
 
-Use a unique password of at least 12 characters. This command creates or updates the account with the configured email; **do not rerun it casually in production**, because it updates the password.
+This command creates or updates the account with the configured email and replaces its password. Do not rerun it casually in production.
 
-The admin UI is available at `/admin`. Never publish admin credentials or tokens.
+To promote an existing account without changing its password, use the documented `npm run promote-super-admin` command or the repository's manual **Promote Super Admin** GitHub Actions workflow. See [Admin provisioning](docs/configuration.md). Never place database credentials in source files or workflow inputs; use protected repository secrets.
 
 ## API overview
 
 | Method | Route | Access |
 | --- | --- | --- |
 | GET | `/api/health` | Public |
-| POST | `/api/auth/login` | Public |
-| GET | `/api/auth/me` | Admin |
-| GET | `/api/projects`, `/api/projects/:id` | Public |
-| GET | `/api/skills`, `/api/experiences`, `/api/education` | Public |
-| GET | `/api/about`, `/api/site-settings` | Public |
-| POST/PUT/DELETE | Content resource endpoints | Admin |
-| PUT | `/api/about`, `/api/site-settings` | Admin |
+| POST | `/api/auth/login` | Public, rate limited |
+| GET | `/api/auth/me` | Admin or Super Admin |
+| GET | `/api/auth/admins` | Super Admin |
+| POST/PATCH/DELETE | `/api/auth/admins` and `/api/auth/admins/:id` | Super Admin |
+| GET | Portfolio resource routes | Public |
+| POST/PUT/DELETE | Content resource endpoints | Admin or Super Admin |
+| PUT | `/api/about`, `/api/site-settings` | Admin or Super Admin |
 
-Admin endpoints require an `Authorization: Bearer <token>` header. See [API notes](docs/architecture.md).
+Protected endpoints require an `Authorization: Bearer <token>` header. See [API notes](docs/architecture.md).
 
-## Build and deployment
+## Build, tests, and deployment
 
-```bash
-npm run build:frontend
-```
+The GitHub Actions workflow currently checks:
 
-Netlify uses the checked-in `netlify.toml` to build `frontend/`. The backend is a separate Node.js service requiring a PostgreSQL connection and runtime environment variables.
+- Frontend production build
+- Backend JavaScript syntax
+- Existing backend unit tests
+- Prisma schema validity
+
+Netlify uses the checked-in `netlify.toml` to build `frontend/`. Render hosts the separate Node.js API and PostgreSQL database. GitHub CI passing verifies the repository checks; it does not, by itself, prove that the latest frontend deployment is live.
 
 ## Security and privacy
 
-- Never commit `.env` files, database credentials, JWT secrets, or real admin tokens.
-- Content-editing routes require JWT authentication and an admin role.
-- Use HTTPS and a strong, private JWT secret in production.
-- Configure CORS with the exact frontend origin.
-- Do not publish confidential appraisal/client data in screenshots, sample reports, or downloadable files.
-- Before production use, add rate limiting, stronger request validation, and comprehensive automated tests.
+- Never commit `.env` files, database credentials, JWT secrets, or admin tokens.
+- Login attempts are limited to 10 per client IP per 15-minute window. The current limiter is process-local and is not shared across multiple backend instances.
+- Admin write routes check the active database role on each request. Admin-account management requires the Super Admin role.
+- Request validation is present for core login, admin-account, project, skill, About, and settings fields, but CRUD validation is not yet comprehensive.
+- The browser currently stores the JWT in `localStorage`; an XSS vulnerability could expose it. A future session redesign should evaluate HttpOnly cookies and CSRF protections.
+- Review downloadable documents and profile assets for personal or client-confidential information before publishing them in this public repository.
+- Review the [security policy](SECURITY.md) and current [repository audit](docs/repository-audit.md).
 
 ## Project status
 
-The portfolio, admin interface, REST API, and database models are implemented. Ongoing improvements include automated testing, security hardening, documentation, and performance tuning.
+The core portfolio, admin dashboard, REST API, database models, role-based admin management, and CI baseline are implemented. The remaining priority work is production data durability, complete request validation and tests, asset storage, accessibility/SEO, and cleanup of legacy root-level files. See the [roadmap](docs/roadmap.md).
 
 ## Author
 
@@ -154,9 +168,4 @@ The portfolio, admin interface, REST API, and database models are implemented. O
 
 ---
 
-This repository contains personal portfolio content and source code. No open-source license is currently granted; contact the author for reuse permissions.
-
-
-## Repository audit
-
-See [docs/repository-audit.md](docs/repository-audit.md) for the source-based architecture, security, maintainability, and CI audit.
+This repository is public, but no open-source license is currently granted. Contact the author for reuse permissions.
