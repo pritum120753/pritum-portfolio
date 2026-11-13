@@ -220,3 +220,85 @@ test("Super Admin bypasses section-specific permission rows", async () => {
 
   assert.equal(nextCalled, true);
 });
+
+test("section permissions require View as well as the requested action", async () => {
+  const requireSectionPermission = createRequireSectionPermission(async (id) => ({
+    id,
+    role: "ADMIN",
+    permissions: [{ section: "projects", canView: false, canCreate: true, canEdit: true, canDelete: true }],
+  }));
+  const middleware = requireSectionPermission("projects", "edit");
+  const req = { user: { userId: "admin-1", role: "ADMIN" } };
+  const res = createResponse();
+
+  await middleware(req, res, () => assert.fail("next must not be called"));
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(res.payload.code, "SECTION_PERMISSION_REQUIRED");
+});
+
+test("section permissions reject a missing section row", async () => {
+  const requireSectionPermission = createRequireSectionPermission(async (id) => ({
+    id,
+    role: "ADMIN",
+    permissions: [],
+  }));
+  const middleware = requireSectionPermission("skills", "view");
+  const req = { user: { userId: "admin-1", role: "ADMIN" } };
+  const res = createResponse();
+
+  await middleware(req, res, () => assert.fail("next must not be called"));
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(res.payload.section, "skills");
+});
+
+test("section permissions use the latest database state for every request", async () => {
+  let canEdit = false;
+  let lookups = 0;
+  const requireSectionPermission = createRequireSectionPermission(async (id) => {
+    lookups += 1;
+    return {
+      id,
+      role: "ADMIN",
+      permissions: [{ section: "projects", canView: true, canCreate: false, canEdit, canDelete: false }],
+    };
+  });
+  const middleware = requireSectionPermission("projects", "edit");
+
+  const firstResponse = createResponse();
+  await middleware(
+    { user: { userId: "admin-1", role: "ADMIN" } },
+    firstResponse,
+    () => assert.fail("first request must be denied")
+  );
+  assert.equal(firstResponse.statusCode, 403);
+
+  canEdit = true;
+  const secondResponse = createResponse();
+  let nextCalled = false;
+  await middleware(
+    { user: { userId: "admin-1", role: "ADMIN" } },
+    secondResponse,
+    () => { nextCalled = true; }
+  );
+
+  assert.equal(nextCalled, true);
+  assert.equal(lookups, 2);
+});
+
+test("section permission database errors are forwarded to the error handler", async () => {
+  const databaseError = new Error("database unavailable");
+  const requireSectionPermission = createRequireSectionPermission(async () => {
+    throw databaseError;
+  });
+  const middleware = requireSectionPermission("projects", "create");
+  const req = { user: { userId: "admin-1", role: "ADMIN" } };
+  const res = createResponse();
+  let forwardedError = null;
+
+  await middleware(req, res, (error) => { forwardedError = error; });
+
+  assert.equal(forwardedError, databaseError);
+});
+
