@@ -30,6 +30,10 @@ The frontend API helper prefixes requests with `/api`. In local development, Vit
 | Create regular Admin accounts | No | Yes |
 | Edit/delete regular Admin accounts | No | Yes |
 | Manage the Super Admin account through Admin Management | No | No |
+| Configure regular Admin section permissions | No | Yes |
+| Review activity/audit history | No | Yes |
+| Submit permission/data-change requests | Yes | Not required |
+| Approve/reject Admin requests | No | Yes |
 
 The `User.role` field currently stores the strings `ADMIN` and `SUPER_ADMIN`. Authorization middleware checks the token role against the current database role on protected requests. The promotion script keeps one Super Admin when run, but the database schema does not yet enforce uniqueness of the Super Admin role.
 
@@ -51,6 +55,11 @@ The `User.role` field currently stores the strings `ADMIN` and `SUPER_ADMIN`. Au
 - `GET /api/auth/admins` — list admin accounts (Super Admin only)
 - `POST /api/auth/admins` — create a regular Admin (Super Admin only)
 - `PATCH /api/auth/admins/:id` — update a regular Admin (Super Admin only)
+- `PUT /api/auth/admins/:id/permissions` — set section-level permissions (Super Admin only)
+- `PATCH /api/auth/profile` — update own display name or password (Admin and Super Admin)
+- `GET/POST /api/auth/requests` — view own requests or submit permission/data-change requests
+- `PATCH /api/auth/requests/:id/review` — approve/reject requests (Super Admin only)
+- `GET /api/auth/audit-logs` — read activity history (Super Admin only)
 - `DELETE /api/auth/admins/:id` — delete a regular Admin (Super Admin only)
 - `POST/PUT/DELETE /api/projects` — project content
 - `POST/PUT/DELETE /api/skills` — skill content
@@ -63,7 +72,7 @@ Content writes use `authenticateToken` followed by `requireAdmin`. Admin-account
 
 ## Database models
 
-Prisma defines `User`, `Project`, `Skill`, `Experience`, `Education`, `AboutContent`, and `SiteSettings`. Schema changes are tracked in `backend/prisma/migrations`.
+Prisma defines `User`, `AdminPermission`, `AdminRequest`, `AuditLog`, `Project`, `Skill`, `Experience`, `Education`, `AboutContent`, and `SiteSettings`. Schema changes are tracked in `backend/prisma/migrations`.
 
 ## Engineering and operational considerations
 
@@ -71,6 +80,10 @@ Prisma defines `User`, `Project`, `Skill`, `Experience`, `Education`, `AboutCont
 - Express Helmet and an explicit CORS origin allowlist are enabled.
 - JSON request bodies are limited to 1 MB.
 - Login requests are limited to 10 attempts per client IP per 15-minute window. The counter store is process-local and should be replaced with a shared store before scaling beyond one instance.
+- Section permissions are checked in backend middleware for every protected content create/update/delete request. Super Admin bypasses the section matrix; regular Admins require an explicit grant.
+- Existing regular Admins receive their previous full section access in the governance migration. Newly created Admin accounts start with no section access until assigned by a Super Admin.
+- Admin permission requests and proposed data changes are stored as pending requests. Approval updates the permission matrix or applies the approved allowlisted data change in a database transaction.
+- Successful content mutations, profile updates, permission changes, Admin account actions, and request decisions are recorded in `AuditLog`. Only Super Admin can read audit history. Password/token fields and embedded image data are excluded from snapshots.
 - Validation exists for login, Admin account creation/update, Projects (partial), Skills (partial), About, and Site Settings. Experience and Education validation, URL protocols, dates, numeric fields, and cross-field rules need more comprehensive schemas.
 - The frontend stores the JWT in `localStorage`; consider an HttpOnly cookie session with CSRF defenses in a separately planned security change.
 - The profile picture picker limits new files to 650 KiB and avoids resending an unchanged image on unrelated settings updates. The picture is still saved as a Base64 data URL in `SiteSettings.heroImage`; object storage is the long-term solution.
