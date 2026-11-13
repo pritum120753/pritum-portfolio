@@ -68,7 +68,7 @@ The `User.role` field currently stores the strings `ADMIN` and `SUPER_ADMIN`. Au
 - `PUT /api/about` — About content
 - `PUT /api/site-settings` — public site configuration
 
-Content writes use `authenticateToken` followed by `requireAdmin`. Admin-account management uses `authenticateToken` followed by `requireSuperAdmin`. Protected requests require `Authorization: Bearer <JWT>`.
+Content writes use `authenticateToken` followed by `requireSectionPermission(section, action)`. Admin-account management, permission control, approval review, and audit history use `authenticateToken` followed by `requireSuperAdmin`. Protected requests require `Authorization: Bearer <JWT>`. Public portfolio GET endpoints remain public because their content is displayed to all site visitors; the `canView` permission controls access to the corresponding Admin Dashboard section, not confidentiality of public portfolio data.
 
 ## Database models
 
