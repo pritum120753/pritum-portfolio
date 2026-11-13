@@ -11,7 +11,7 @@ This is a source/configuration audit plus a limited hosting metadata review. It 
 
 The repository has a working full-stack foundation: React/Vite frontend, Express API, PostgreSQL through Prisma, JWT-based Admin authentication, Super Admin role gating, deployment configuration, and GitHub Actions checks.
 
-The core product is implemented, but the repository is **not yet production-hardened**. The most important issue is the current Render Free PostgreSQL database's expiry. Other high-priority work includes public-document review, fixing the image-upload/body-size mismatch, complete request validation, durable backups, and automated frontend/integration tests.
+The core product is implemented, but the repository is **not yet production-hardened**. The most important issue is the current Render Free PostgreSQL database's expiry. Other high-priority work includes public-document review, complete request validation, durable backups, and automated frontend/integration tests.
 
 ## P0 — Data durability and deployment risk
 
@@ -40,17 +40,15 @@ The repository is public, so these files are downloadable from GitHub even thoug
 
 ### Active frontend asset paths do not match tracked PDF paths
 
-The active `frontend/src/App.jsx` links to `/sample-report.pdf`; its default resume URL is `/resume.pdf`. The matching PDFs are present under root `public/`, not `frontend/public/`. With Netlify's current `base = "frontend"`, root-level assets are not part of the published `dist` directory. Unless the production Site Settings point to an external URL or another deployed asset, these links will not resolve.
+The active `frontend/src/App.jsx` links to `/sample-report.pdf`; its default resume URL is `/resume.pdf`. The matching PDFs are present under root `public/`, not `frontend/public/`. With Netlify's current `base = "frontend"`, root-level assets are not part of the published `dist` directory. The production Site Settings row also currently contains `heroResumeUrl = "/resume.pdf"`. Unless another deployed asset or redirect supplies the file, these links will not resolve.
 
 **Required action:** decide which documents are meant to be public, place only approved public assets under `frontend/public/` or a proper asset host, and verify both links after deployment.
 
-## P1 — Functional issue: profile image upload exceeds API limit
+## P1 — Profile image storage
 
-`frontend/src/admin/components/SiteSettingsManager.jsx` allows an image up to 3 MB and converts it to a Base64 data URL in the `heroImage` field. Base64 increases payload size by roughly one third. The Express server accepts JSON bodies up to 1 MB. Therefore, a file allowed by the UI can exceed the API limit and fail when Website Settings are saved.
+The profile image is currently converted to a Base64 data URL and stored in the `SiteSettings.heroImage` field. The Admin UI previously allowed 3 MB images against a 1 MB API JSON body limit. An interim fix now limits new images to 650 KiB and omits an unchanged image from unrelated settings updates, avoiding that request-size mismatch.
 
-Storing Base64 image data in the public Site Settings record also increases database size and every public settings response.
-
-**Recommended fix:** replace the data-URL workflow with a validated upload endpoint and object storage. As an interim fix only, reduce the client-side maximum to safely below the 1 MB request limit and clearly communicate the restriction.
+The storage model is still not ideal: Base64 data increases database size and is returned in the public Site Settings response. Replace it with a validated object-storage upload endpoint and appropriate public/private URLs.
 
 ## P1 — Backend validation is inconsistent
 
@@ -96,7 +94,7 @@ Remaining risks:
 - Some form labels are not associated with controls using `htmlFor`/IDs.
 - The public page has basic title/description metadata, but no complete per-page SEO, sitemap, robots policy, or social sharing metadata.
 - The public GitHub repositories section depends on the unauthenticated GitHub API and has no explicit user-facing rate-limit/error state.
-- The shared frontend API helper sets `Content-Type: application/json` even for requests without a body; this is unnecessary for simple GET requests.
+- The shared frontend API helper now avoids forcing JSON content type on bodyless requests.
 
 ## P2 — Contact form anti-spam
 
@@ -118,11 +116,11 @@ The root contains a zero-byte file named `git`. It appears to be an accidental a
 
 ### Tooling gaps
 
-- No Dependabot configuration was present at the time of review.
-- CI did not run dependency vulnerability audits.
+- Weekly Dependabot updates are now configured for the root, frontend, backend, and GitHub Actions.
+- CI now audits frontend and backend dependencies for high-severity vulnerabilities.
+- CI uses pinned current GitHub Actions versions and Node.js 24.
 - No formatter/linter is configured.
 - No frontend tests exist.
-- CI used older GitHub Actions major versions that produced Node runtime deprecation warnings in the observed run.
 
 ## Positive foundations
 
@@ -130,30 +128,37 @@ The root contains a zero-byte file named `git`. It appears to be an accidental a
 - Separate frontend/backend package manifests and lockfiles exist.
 - Prisma schema changes are represented by migrations.
 - Secrets are not present in the tracked `.env.example`; real environment files are ignored.
-- Express Helmet, CORS allowlist, 1 MB JSON body limit, and protected routes are configured.
+- Express Helmet, CORS allowlist, 1 MB body limit, and protected routes are configured.
 - Backend tests cover login validation, Admin input validation, authentication/authorization middleware, and login rate limiting.
-- GitHub Actions verifies frontend build, backend syntax, backend tests, and Prisma schema validity.
+- GitHub Actions verifies frontend build, dependency audit, backend syntax, backend tests, and Prisma schema validity.
 - Admin screens are split into feature components.
 - The current Super Admin role is active in the production database; role counts were verified during the audit.
+
+## Additional deployment finding
+
+The connected Render API service's build command currently runs `npm run create-admin` on every deploy after migrations. That script upserts the configured Admin email and replaces its password with `ADMIN_PASSWORD`. This means deployments can reset the provisioned account's password and may recreate it if absent. Move one-time Admin provisioning out of the normal build command after confirming the existing production account and provisioning process.
 
 ## Recommended execution order
 
 1. **Resolve database expiry and verify a restorable backup.**
 2. Review the public PDFs and confirm the intended resume/sample-report assets.
-3. Fix document URLs and the profile-image upload/body-size mismatch.
-4. Add consistent server-side schemas and controller integration tests.
-5. Add frontend component/E2E tests, lint/format, and accessibility checks.
-6. Improve JWT session handling and rate-limit storage; enforce the Super Admin invariant in the database.
-7. Clean up legacy files and improve public-site SEO/performance.
-8. Add admin audit history, draft/publish, search/filter, and further portfolio features.
+3. Fix the active public PDF paths and verify them after deployment.
+4. Move profile image storage to object storage.
+5. Add consistent server-side schemas and controller integration tests.
+6. Review the Render build command so routine deploys do not reset Admin passwords.
+7. Add frontend component/E2E tests, lint/format, and accessibility checks.
+8. Improve JWT session handling and rate-limit storage; enforce the Super Admin invariant in the database.
+9. Clean up legacy files and improve public-site SEO/performance.
+10. Add admin audit history, draft/publish, search/filter, and further portfolio features.
 
 ## Verification snapshot
 
-- GitHub tree: 113 entries; recursive tree response was not truncated.
+- GitHub tree: 113 entries at the start of the audit; recursive tree response was not truncated.
 - Main branch: 1 branch (`main`).
 - GitHub open issues: 0 at audit time.
 - Pull requests and releases: none found in the reviewed API listing.
-- CI: last reviewed checks for the Super Admin workflow and repository CI completed successfully.
-- Render API: current backend deployment reported Live.
+- CI: updated frontend build, high-severity dependency audits, backend syntax/tests, and Prisma validation all passed after the CI changes.
+- Render API: current backend deployment reported Live during the initial infrastructure review.
 - Render PostgreSQL: Free plan, available at audit time, expiry reported as 2026-12-04.
+- Production Site Settings: `heroResumeUrl = "/resume.pdf"`; `heroImage` is a Base64 data URL of approximately 321,131 characters.
 - Netlify latest production deploy: not independently verified in this audit.
