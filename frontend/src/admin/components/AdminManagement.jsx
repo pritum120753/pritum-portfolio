@@ -128,8 +128,8 @@ function AdminManagement({ currentUser }) {
       <div className="admin-panel">
         <h2>{editingId ? "Edit Admin Account" : "Add a Regular Admin"}</h2>
         <p className="admin-help">
-          Regular Admins can manage portfolio content but cannot create, edit, or delete admin accounts.
-          The Super Admin account has protected, higher-level access.
+          New Admin accounts start without content-section access. Assign View, Create, Edit, and Delete rights from Permission Control after creating an account.
+          Regular Admins cannot manage other admin accounts; the Super Admin account remains protected.
         </p>
 
         {error && <div className="admin-error" role="alert">{error}</div>}
@@ -239,6 +239,18 @@ function AdminManagement({ currentUser }) {
                       </span>
                     </div>
                     <p>{admin.email}</p>
+                    {!isSuper && (
+                      <span className="admin-admin-date">
+                        Sections: {(admin.permissions || []).filter((item) => item.canView).map((item) => ({
+                          projects: "Projects",
+                          skills: "Skills",
+                          experience: "Experience",
+                          education: "Education",
+                          about: "About",
+                          settings: "Settings",
+                        }[item.section] || item.section)).join(", ") || "No section access assigned"}
+                      </span>
+                    )}
                     <span className="admin-admin-date">
                       Added {admin.createdAt
                         ? new Date(admin.createdAt).toLocaleDateString()
