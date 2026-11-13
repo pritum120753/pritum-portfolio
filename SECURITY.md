@@ -14,9 +14,10 @@ Please do not publish exploit details, access tokens, database credentials, or p
 - Login attempts are limited to 10 attempts per client IP per 15-minute window.
 - Passwords are hashed with bcrypt.
 - Protected API requests verify the JWT and look up the current database role.
-- Content writes require `ADMIN` or `SUPER_ADMIN`; admin-account management requires `SUPER_ADMIN`.
+- Content writes require an active Admin or Super Admin role and a section-specific Create/Edit/Delete permission. Admin-account management, permission control, request review, and audit-history reads require `SUPER_ADMIN`.
 - Deleted or demoted accounts lose access to protected API routes even if their previous JWT has not expired.
 - The profile image picker now limits new images to 650 KiB and omits an unchanged existing image from unrelated settings updates, keeping the request within the API body limit.
+- Admin actions, content mutations, profile changes, permission changes, and approval decisions are recorded in the Super Admin-only audit history.
 
 ## Important limitations and hardening work
 
@@ -26,7 +27,7 @@ Please do not publish exploit details, access tokens, database credentials, or p
 - **Uploads:** the profile picture is currently converted to a Base64 data URL and stored in the Site Settings record. The 650 KiB client limit is an interim measure; it is not a dedicated object-storage upload pipeline. Public Site Settings responses include the image data, increasing response and database size.
 - **Backups:** document and test a database backup/restore process. The current Render Free PostgreSQL plan does not provide backups and has a limited lifetime; do not treat it as durable production storage.
 - **Public repository assets:** review root-level PDFs and all downloadable files for personal or client-confidential content. Files committed to this public repository are publicly accessible even when they are outside Netlify's configured publish directory.
-- **Auditability:** admin changes do not yet have a persistent audit log.
+- **Auditability:** application audit records are append-only through the available API and visible only to Super Admin. Database owners with direct SQL access can still modify underlying records; use provider-level database access controls and backups as an additional safeguard.
 
 ## Deployment checklist
 
