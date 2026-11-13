@@ -8,7 +8,9 @@ const password = process.env.ADMIN_PASSWORD;
 const superAdminEmail = process.env.SUPER_ADMIN_EMAIL?.toLowerCase().trim();
 const promoteToSuperAdmin = Boolean(superAdminEmail && email === superAdminEmail);
 
-if (!name || !email || !password || password.length < 12) {
+if (process.env.ALLOW_ADMIN_PROVISIONING !== "1") {
+  console.log("Admin provisioning skipped. Set ALLOW_ADMIN_PROVISIONING=1 to run this one-time setup intentionally.");
+} else if (!name || !email || !password || password.length < 12) {
   console.error("Set ADMIN_NAME, ADMIN_EMAIL and a password of at least 12 characters in .env");
   process.exitCode = 1;
 } else {
