@@ -14,7 +14,7 @@
     "check:syntax": "find src -type f -name '*.js' -print0 | xargs -0 -n1 node --check"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "^7.10.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
