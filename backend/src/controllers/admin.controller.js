@@ -56,6 +56,19 @@ export async function createAdmin(req, res, next) {
       select: ADMIN_SELECT,
     });
 
+    await prisma.auditLog.create({
+      data: {
+        actorId: req.admin.id,
+        actorName: req.admin.name,
+        actorEmail: req.admin.email,
+        action: "ADMIN_CREATED",
+        section: "admin-management",
+        recordId: admin.id,
+        summary: `Created Admin account for ${admin.name}`,
+        after: { id: admin.id, name: admin.name, email: admin.email, role: admin.role },
+      },
+    });
+
     return res.status(201).json({
       success: true,
       message: "Admin account created successfully",
@@ -78,7 +91,7 @@ export async function updateAdmin(req, res, next) {
 
     const target = await prisma.user.findUnique({
       where: { id: req.params.id },
-      select: { id: true, role: true },
+      select: { id: true, name: true, email: true, role: true },
     });
     if (!target || target.role !== "ADMIN") {
       return res.status(404).json({ success: false, message: "Regular admin account not found" });
@@ -93,6 +106,20 @@ export async function updateAdmin(req, res, next) {
       where: { id: target.id },
       data,
       select: ADMIN_SELECT,
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorId: req.admin.id,
+        actorName: req.admin.name,
+        actorEmail: req.admin.email,
+        action: "ADMIN_UPDATED",
+        section: "admin-management",
+        recordId: admin.id,
+        summary: `Updated Admin account for ${admin.name}`,
+        before: { id: target.id, name: target.name, email: target.email, role: target.role },
+        after: { id: admin.id, name: admin.name, email: admin.email, role: admin.role },
+      },
     });
 
     return res.json({
@@ -116,7 +143,7 @@ export async function deleteAdmin(req, res, next) {
     const outcome = await prisma.$transaction(async (transaction) => {
       const target = await transaction.user.findUnique({
         where: { id: req.params.id },
-        select: { id: true, role: true },
+        select: { id: true, name: true, email: true, role: true },
       });
 
       if (!target || target.role !== "ADMIN") {
@@ -137,6 +164,18 @@ export async function deleteAdmin(req, res, next) {
       }
 
       await transaction.user.delete({ where: { id: target.id } });
+      await transaction.auditLog.create({
+        data: {
+          actorId: req.admin.id,
+          actorName: req.admin.name,
+          actorEmail: req.admin.email,
+          action: "ADMIN_DELETED",
+          section: "admin-management",
+          recordId: target.id,
+          summary: `Deleted Admin account for ${target.name}`,
+          before: { id: target.id, name: target.name, email: target.email, role: target.role },
+        },
+      });
       return { status: 200 };
     }, { isolationLevel: "Serializable" });
 
