@@ -38,7 +38,6 @@ function App() {
   const [educationItems, setEducationItems] = useState([]);
   const [about, setAbout] = useState(null);
   const [siteSettings, setSiteSettings] = useState(null);
-  const [siteSettingsLoading, setSiteSettingsLoading] = useState(true);
   const [githubRepos, setGithubRepos] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
@@ -99,7 +98,6 @@ function App() {
           }
         }
       } finally {
-        if (active) setSiteSettingsLoading(false);
       }
     };
 
@@ -272,31 +270,6 @@ function App() {
       .join(" • "),
     description: item.description || "",
   }));
-
-  if (siteSettingsLoading) {
-    return (
-      <main
-        className="flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-6 text-white"
-        role="status"
-        aria-live="polite"
-        aria-label="Loading the latest portfolio content"
-      >
-        <div className="flex w-full max-w-md flex-col items-center text-center">
-          <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-400/30 bg-blue-500/10 shadow-lg shadow-blue-500/10">
-            <span className="text-2xl font-black tracking-tight text-blue-300">P.</span>
-          </div>
-          <div className="mb-5 h-9 w-9 animate-spin rounded-full border-2 border-white/10 border-t-blue-400" />
-          <h1 className="text-xl font-semibold tracking-tight">Loading the latest portfolio</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-400">
-            Connecting to live content and profile settings...
-          </p>
-          <div className="mt-8 h-1 w-40 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-blue-400 to-purple-500" />
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <div
