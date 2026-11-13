@@ -5,6 +5,7 @@ import {
   authenticateToken,
   createRequireAdmin,
   createRequireSuperAdmin,
+  createRequireSectionPermission,
 } from "./auth.middleware.js";
 
 function createResponse() {
@@ -164,4 +165,58 @@ test("requireAdmin forwards database errors to the error handler", async () => {
   await requireAdmin(req, res, (error) => { forwardedError = error; });
 
   assert.equal(forwardedError, databaseError);
+});
+
+
+test("section permissions allow an explicitly granted action", async () => {
+  const requireSectionPermission = createRequireSectionPermission(async (id) => ({
+    id,
+    name: "Content Admin",
+    email: "content@example.com",
+    role: "ADMIN",
+    permissions: [{ section: "projects", canView: true, canCreate: true, canEdit: true, canDelete: false }],
+  }));
+  const middleware = requireSectionPermission("projects", "edit");
+  const req = { user: { userId: "admin-1", role: "ADMIN" } };
+  const res = createResponse();
+  let nextCalled = false;
+
+  await middleware(req, res, () => { nextCalled = true; });
+
+  assert.equal(nextCalled, true);
+  assert.equal(req.admin.id, "admin-1");
+  assert.equal(req.admin.name, "Content Admin");
+});
+
+test("section permissions reject actions that were not granted", async () => {
+  const requireSectionPermission = createRequireSectionPermission(async (id) => ({
+    id,
+    role: "ADMIN",
+    permissions: [{ section: "projects", canView: true, canCreate: false, canEdit: false, canDelete: false }],
+  }));
+  const middleware = requireSectionPermission("projects", "delete");
+  const req = { user: { userId: "admin-1", role: "ADMIN" } };
+  const res = createResponse();
+
+  await middleware(req, res, () => assert.fail("next must not be called"));
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(res.payload.code, "SECTION_PERMISSION_REQUIRED");
+  assert.equal(res.payload.section, "projects");
+});
+
+test("Super Admin bypasses section-specific permission rows", async () => {
+  const requireSectionPermission = createRequireSectionPermission(async (id) => ({
+    id,
+    role: "SUPER_ADMIN",
+    permissions: [],
+  }));
+  const middleware = requireSectionPermission("settings", "delete");
+  const req = { user: { userId: "super-1", role: "SUPER_ADMIN" } };
+  const res = createResponse();
+  let nextCalled = false;
+
+  await middleware(req, res, () => { nextCalled = true; });
+
+  assert.equal(nextCalled, true);
 });
