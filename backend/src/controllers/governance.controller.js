@@ -76,6 +76,15 @@ function sendValidationError(res, message) {
   return res.status(400).json({ success: false, message });
 }
 
+function containsInlineImage(value) {
+  if (typeof value === "string") return /^data:image\//i.test(value);
+  if (Array.isArray(value)) return value.some(containsInlineImage);
+  if (value && typeof value === "object") return Object.entries(value).some(([key, nested]) =>
+    /image|photo|avatar/i.test(key) && typeof nested === "string" && /^data:/i.test(nested)
+  );
+  return false;
+}
+
 function snapshot(value) {
   if (value == null) return value;
   if (value instanceof Date) return value.toISOString();
@@ -177,8 +186,8 @@ export async function createAdminRequest(req, res, next) {
       if (payload && JSON.stringify(payload).length > 50000) {
         return sendValidationError(res, "The proposed data is too large. Keep requests under 50 KB.");
       }
-      if (section === "settings" && typeof payload?.heroImage === "string" && payload.heroImage.startsWith("data:")) {
-        return sendValidationError(res, "Image data cannot be submitted in an approval request. Use an image URL.");
+      if (containsInlineImage(payload)) {
+        return sendValidationError(res, "Inline image data cannot be submitted in an approval request. Use an image URL.");
       }
     }
 
