@@ -60,8 +60,8 @@ export function createRequireAdmin(findUserById = findActiveAdmin) {
 
       req.admin = {
         id: user.id,
-        name: user.name,
-        email: user.email,
+        ...(user.name ? { name: user.name } : {}),
+        ...(user.email ? { email: user.email } : {}),
         role: user.role,
       };
       return next();
@@ -153,8 +153,8 @@ export function createRequireSectionPermission(findUserById = (userId) =>
 
         req.admin = {
           id: user.id,
-          name: user.name,
-          email: user.email,
+          ...(user.name ? { name: user.name } : {}),
+          ...(user.email ? { email: user.email } : {}),
           role: user.role,
         };
 
