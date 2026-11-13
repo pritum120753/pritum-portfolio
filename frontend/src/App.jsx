@@ -97,7 +97,6 @@ function App() {
             // Continue with the built-in defaults if cached data is unavailable or invalid.
           }
         }
-      } finally {
       }
     };
 
