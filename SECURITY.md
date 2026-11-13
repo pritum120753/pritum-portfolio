@@ -16,13 +16,14 @@ Please do not publish exploit details, access tokens, database credentials, or p
 - Protected API requests verify the JWT and look up the current database role.
 - Content writes require `ADMIN` or `SUPER_ADMIN`; admin-account management requires `SUPER_ADMIN`.
 - Deleted or demoted accounts lose access to protected API routes even if their previous JWT has not expired.
+- The profile image picker now limits new images to 650 KiB and omits an unchanged existing image from unrelated settings updates, keeping the request within the API body limit.
 
 ## Important limitations and hardening work
 
 - **Rate-limit storage:** the current login limiter is in process memory. It resets when the service restarts and is not shared across multiple backend instances. Use a shared store before horizontal scaling.
 - **Session storage:** the frontend stores the admin JWT in browser `localStorage`. A successful XSS attack could expose it. Evaluate HttpOnly, Secure, SameSite cookies with an appropriate CSRF strategy before higher-risk use.
 - **Request validation:** validation is not yet uniform across every field in the Project, Skill, Experience, Education, About, and Site Settings controllers. Add schema-based validation and tests before exposing more write operations.
-- **Uploads:** the profile image is currently converted to a Base64 data URL and stored in the Site Settings record. It is not a dedicated private/object-storage upload pipeline; the frontend's advertised 3 MB limit also exceeds the API's 1 MB JSON body limit.
+- **Uploads:** the profile picture is currently converted to a Base64 data URL and stored in the Site Settings record. The 650 KiB client limit is an interim measure; it is not a dedicated object-storage upload pipeline. Public Site Settings responses include the image data, increasing response and database size.
 - **Backups:** document and test a database backup/restore process. The current Render Free PostgreSQL plan does not provide backups and has a limited lifetime; do not treat it as durable production storage.
 - **Public repository assets:** review root-level PDFs and all downloadable files for personal or client-confidential content. Files committed to this public repository are publicly accessible even when they are outside Netlify's configured publish directory.
 - **Auditability:** admin changes do not yet have a persistent audit log.
