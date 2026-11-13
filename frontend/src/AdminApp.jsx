@@ -13,6 +13,10 @@ import {
   Menu,
   X,
   LoaderCircle,
+  ShieldCheck,
+  ClipboardList,
+  History,
+  UserCircle,
 } from "lucide-react";
 import { apiRequest } from "./services/api";
 import AdminLogin from "./admin/components/AdminLogin.jsx";
@@ -21,6 +25,8 @@ import ResourceManager from "./admin/components/ResourceManager.jsx";
 import AboutManager from "./admin/components/AboutManager.jsx";
 import SiteSettingsManager from "./admin/components/SiteSettingsManager.jsx";
 import AdminManagement from "./admin/components/AdminManagement.jsx";
+import MyProfile from "./admin/components/MyProfile.jsx";
+import AdminGovernance from "./admin/components/AdminGovernance.jsx";
 import "./admin.css";
 
 function AdminApp() {
@@ -69,17 +75,26 @@ function AdminApp() {
     }} />;
   }
 
+  const sectionPermission = (section) =>
+    isSuperAdmin || user.permissions?.some((permission) =>
+      permission.section === section && permission.canView
+    );
+
   const navigation = [
     { label: "Overview", path: "/admin/dashboard", icon: LayoutDashboard },
-    { label: "Projects", path: "/admin/projects", icon: FolderKanban },
-    { label: "Skills", path: "/admin/skills", icon: Code2 },
-    { label: "Experience", path: "/admin/experience", icon: BriefcaseBusiness },
-    { label: "Education", path: "/admin/education", icon: GraduationCap },
-    { label: "About Me", path: "/admin/about", icon: UserRound },
-    { label: "Website Settings", path: "/admin/settings", icon: Settings },
-    ...(isSuperAdmin
-      ? [{ label: "Admin Management", path: "/admin/admins", icon: Users }]
-      : []),
+    ...(sectionPermission("projects") ? [{ label: "Projects", path: "/admin/projects", icon: FolderKanban }] : []),
+    ...(sectionPermission("skills") ? [{ label: "Skills", path: "/admin/skills", icon: Code2 }] : []),
+    ...(sectionPermission("experience") ? [{ label: "Experience", path: "/admin/experience", icon: BriefcaseBusiness }] : []),
+    ...(sectionPermission("education") ? [{ label: "Education", path: "/admin/education", icon: GraduationCap }] : []),
+    ...(sectionPermission("about") ? [{ label: "About Me", path: "/admin/about", icon: UserRound }] : []),
+    ...(sectionPermission("settings") ? [{ label: "Website Settings", path: "/admin/settings", icon: Settings }] : []),
+    { label: "My Profile", path: "/admin/profile", icon: UserCircle },
+    { label: "Requests", path: "/admin/requests", icon: ClipboardList },
+    ...(isSuperAdmin ? [
+      { label: "Admin Management", path: "/admin/admins", icon: Users },
+      { label: "Permission Control", path: "/admin/permissions", icon: ShieldCheck },
+      { label: "Activity History", path: "/admin/history", icon: History },
+    ] : []),
   ];
 
   return (
@@ -132,18 +147,22 @@ function AdminApp() {
         <div className="admin-content">
           <Routes>
             <Route path="dashboard" element={<AdminOverview user={user} />} />
-            <Route path="projects" element={<ResourceManager type="projects" />} />
-            <Route path="skills" element={<ResourceManager type="skills" />} />
-            <Route path="experience" element={<ResourceManager type="experience" />} />
-            <Route path="education" element={<ResourceManager type="education" />} />
-            <Route path="about" element={<AboutManager />} />
-            <Route path="settings" element={<SiteSettingsManager />} />
+            <Route path="projects" element={sectionPermission("projects") ? <ResourceManager type="projects" /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="skills" element={sectionPermission("skills") ? <ResourceManager type="skills" /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="experience" element={sectionPermission("experience") ? <ResourceManager type="experience" /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="education" element={sectionPermission("education") ? <ResourceManager type="education" /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="about" element={sectionPermission("about") ? <AboutManager /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="settings" element={sectionPermission("settings") ? <SiteSettingsManager /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="profile" element={<MyProfile currentUser={user} onUpdated={(updated) => setUser((previous) => ({ ...previous, ...updated }))} />} />
+            <Route path="requests" element={<AdminGovernance mode="requests" currentUser={user} />} />
             <Route
               path="admins"
               element={isSuperAdmin
                 ? <AdminManagement currentUser={user} />
                 : <Navigate to="/admin/dashboard" replace />}
             />
+            <Route path="permissions" element={isSuperAdmin ? <AdminGovernance mode="permissions" currentUser={user} /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="history" element={isSuperAdmin ? <AdminGovernance mode="history" currentUser={user} /> : <Navigate to="/admin/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Routes>
         </div>
