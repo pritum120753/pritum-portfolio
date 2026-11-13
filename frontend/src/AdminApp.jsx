@@ -147,12 +147,12 @@ function AdminApp() {
         <div className="admin-content">
           <Routes>
             <Route path="dashboard" element={<AdminOverview user={user} />} />
-            <Route path="projects" element={sectionPermission("projects") ? <ResourceManager type="projects" /> : <Navigate to="/admin/dashboard" replace />} />
-            <Route path="skills" element={sectionPermission("skills") ? <ResourceManager type="skills" /> : <Navigate to="/admin/dashboard" replace />} />
-            <Route path="experience" element={sectionPermission("experience") ? <ResourceManager type="experience" /> : <Navigate to="/admin/dashboard" replace />} />
-            <Route path="education" element={sectionPermission("education") ? <ResourceManager type="education" /> : <Navigate to="/admin/dashboard" replace />} />
-            <Route path="about" element={sectionPermission("about") ? <AboutManager /> : <Navigate to="/admin/dashboard" replace />} />
-            <Route path="settings" element={sectionPermission("settings") ? <SiteSettingsManager /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="projects" element={sectionPermission("projects") ? <ResourceManager type="projects" currentUser={user} /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="skills" element={sectionPermission("skills") ? <ResourceManager type="skills" currentUser={user} /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="experience" element={sectionPermission("experience") ? <ResourceManager type="experience" currentUser={user} /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="education" element={sectionPermission("education") ? <ResourceManager type="education" currentUser={user} /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="about" element={sectionPermission("about") ? <AboutManager currentUser={user} /> : <Navigate to="/admin/dashboard" replace />} />
+            <Route path="settings" element={sectionPermission("settings") ? <SiteSettingsManager currentUser={user} /> : <Navigate to="/admin/dashboard" replace />} />
             <Route path="profile" element={<MyProfile currentUser={user} onUpdated={(updated) => setUser((previous) => ({ ...previous, ...updated }))} />} />
             <Route path="requests" element={<AdminGovernance mode="requests" currentUser={user} />} />
             <Route
