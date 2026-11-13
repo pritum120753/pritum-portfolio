@@ -48,7 +48,7 @@ Each section has four independent permissions:
 | Edit | Update an existing record |
 | Delete | Delete an existing record |
 
-Create, Edit, and Delete require View. The backend checks each write permission on every protected API request; hiding a button in the frontend is not the security boundary.
+Create, Edit, and Delete require View. The backend checks each write permission on every protected API request; hiding a button in the frontend is not the security boundary. The public portfolio GET endpoints intentionally remain public because this content is shown to site visitors. Therefore, View controls the Admin Dashboard section/navigation, not the confidentiality of public portfolio data.
 
 The governance migration grants the pre-existing regular Admin accounts all current content permissions to preserve their existing access. Newly created accounts start with no section permissions.
 
@@ -68,7 +68,7 @@ Choose a section and request View/Create/Edit/Delete access. The Super Admin can
 
 ### Data-change request
 
-Choose a section and request Create, Update, or Delete. Provide a title, reason, and proposed JSON object for Create/Update. Update/Delete requests must include the target record ID.
+Choose a section and request Create, Update, or Delete. Provide a title, reason, and proposed JSON object for Create/Update. Update/Delete requests must include the target record ID. The current request form expects the requester to supply that ID; a future enhancement can let the Super Admin select a record directly during review.
 
 When the Super Admin approves a data-change request, the backend applies the allowlisted fields in a database transaction, updates the request status, and writes an audit entry. If validation fails or the target record no longer exists, the approval transaction is rolled back.
 
