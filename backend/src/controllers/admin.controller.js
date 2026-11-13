@@ -12,6 +12,15 @@ const ADMIN_SELECT = {
   email: true,
   role: true,
   createdAt: true,
+  permissions: {
+    select: {
+      section: true,
+      canView: true,
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+    },
+  },
 };
 
 export async function listAdmins(_req, res, next) {
