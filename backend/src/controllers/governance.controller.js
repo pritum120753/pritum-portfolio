@@ -50,7 +50,7 @@ const MODEL_CONFIG = {
       "academicValue", "academicTitle", "academicSubtitle",
       "interestsValue", "interestsTitle", "interestsSubtitle",
     ],
-    required: [],
+    required: ["description", "additionalText"],
     dateFields: [],
     booleanFields: [],
     integerFields: [],
@@ -161,6 +161,9 @@ export async function createAdminRequest(req, res, next) {
           return sendValidationError(res, `${key} must be true or false.`);
         }
       }
+      if ((requestedPermissions.canCreate || requestedPermissions.canEdit || requestedPermissions.canDelete) && !requestedPermissions.canView) {
+        return sendValidationError(res, "Create, Edit and Delete permissions require View permission.");
+      }
     } else {
       if (!["CREATE", "UPDATE", "DELETE"].includes(action)) {
         return sendValidationError(res, "Data-change action must be CREATE, UPDATE, or DELETE.");
@@ -262,6 +265,7 @@ function prepareRequestedData(section, payload) {
       throw new Error(`${field} is required for this section.`);
     }
   }
+  if (section === "projects" && !Array.isArray(data.technologies)) data.technologies = [];
   return data;
 }
 
