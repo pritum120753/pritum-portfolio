@@ -11,6 +11,6 @@
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\""
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^10.0.7"
   }
 }
