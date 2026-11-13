@@ -1,22 +1,11 @@
-
 import { Router } from "express";
-
-import {
-  getAbout,
-  updateAbout,
-} from "../controllers/about.controller.js";
-
-import {
-  authenticateToken,
-  requireAdmin,
-} from "../middleware/auth.middleware.js";
+import { getAbout, updateAbout } from "../controllers/about.controller.js";
+import { authenticateToken, requireSectionPermission } from "../middleware/auth.middleware.js";
+import { auditMutation } from "../middleware/audit.middleware.js";
 
 const router = Router();
 
-// Public route
 router.get("/", getAbout);
-
-// Protected admin route
-router.put("/", authenticateToken, requireAdmin, updateAbout);
+router.post("/", authenticateToken, requireSectionPermission("about", "create"), auditMutation("about", "CREATE"), updateAbout);
 
 export default router;
