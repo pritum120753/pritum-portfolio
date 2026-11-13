@@ -1,124 +1,159 @@
-# Repository Audit
+# Repository Production-Readiness Audit
 
 **Repository:** `pritum120753/pritum-portfolio`  
 **Audit date:** 2026-11-13  
-**Scope:** Read-only review of the tracked GitHub tree, package manifests, deployment configuration, current application entry points, API helper, authentication middleware, server routes, and latest GitHub Actions run.
+**Branch reviewed:** `main`  
+**Scope:** Tracked Git tree, frontend and backend source, API routes/controllers, Prisma schema and migrations, package manifests/lockfiles, GitHub Actions, documentation, and current Render service/database metadata.
 
-This document records findings from the repository snapshot. It is not a claim that every runtime or production behavior has been tested. No application files were deleted or reorganized during this audit.
+This is a source/configuration audit plus a limited hosting metadata review. It is not a penetration test, full UI test, or independent review of every record in the production database.
 
 ## Executive summary
 
-The repository has a working foundation: a React/Vite frontend, Express API, Prisma/PostgreSQL data layer, admin authentication, environment templates, deployment configuration, and a CI workflow. The latest CI run for the audited `main` commit completed successfully.
+The repository has a working full-stack foundation: React/Vite frontend, Express API, PostgreSQL through Prisma, JWT-based Admin authentication, Super Admin role gating, deployment configuration, and GitHub Actions checks.
 
-The main maintainability concern is that the repository contains two generations of frontend source: the deployed `frontend/` application and an older root-level `src/`, `public/`, and `index.html` structure. Netlify currently builds from `frontend/`, so the root-level copy appears outside the configured deployment path. It should be verified before removal.
+The core product is implemented, but the repository is **not yet production-hardened**. The most important issue is the current Render Free PostgreSQL database's expiry. Other high-priority work includes public-document review, fixing the image-upload/body-size mismatch, complete request validation, durable backups, and automated frontend/integration tests.
 
-The next priority should be to improve test coverage and security controls, then modularize the large frontend files in small, reversible steps. Avoid a full rewrite.
+## P0 — Data durability and deployment risk
 
-## Confirmed repository structure
+### Render Free PostgreSQL database expires
 
-- `frontend/`: active Vite/React application configured as Netlify's build base.
-- `backend/`: Express API, Prisma schema/migrations, controllers, routes, middleware, and admin creation script.
-- `docs/`: architecture, configuration, development, roadmap, and private AI Resume Maker specification.
-- `.github/workflows/ci.yml`: frontend build and backend syntax/Prisma validation.
-- Root-level `src/`, `public/`, and `index.html`: legacy/duplicate frontend structure.
-- Root, frontend, and backend each have package manifests/lockfiles.
+The connected Render workspace reports the portfolio database as a Free PostgreSQL instance with an expiry date of **2026-12-04**. The database is currently available, but Render's Free PostgreSQL tier expires 30 days after creation, becomes inaccessible at expiry, then has a 14-day grace period before deletion. Free PostgreSQL does not include backups. Move the database to a durable paid plan/provider or export and verify a restorable backup before expiry.
 
-## Findings and recommendations
+Reference: [Render Free instance limitations](https://render.com/docs/free).
 
-### P1 — Resolve duplicate frontend source safely
+### No verified backup/restore procedure
 
-**Evidence:** The root contains `src/App.jsx`, `src/main.jsx`, `src/ContactForm.jsx`, `src/StarBackground.jsx`, `src/data.js`, `vite.config.js`, `index.html`, and `public/`. The active deployment configuration in `netlify.toml` uses `base = "frontend"`, `command = "npm run build"`, and `publish = "dist"`. The active frontend has its own corresponding files under `frontend/src/` and `frontend/index.html`.
+No repository backup job, restore script, or documented recovery test was found. A backup that has not been restored in a test is not a verified recovery plan.
 
-**Risk:** Developers may edit the wrong copy, and the old files can drift from the deployed app. The root-level `public/resume.pdf` and `public/sample-report.pdf` are tracked separately from the deployed `frontend/public/` folder.
+**Required action:** create a protected database export, store it outside the repository, verify it can be restored into a separate database, and document the recovery steps.
 
-**Recommendation:** Confirm no external workflow or developer process depends on the root-level legacy app. Then archive or remove the obsolete copy in a dedicated cleanup change after comparing assets and behavior. Do not delete it as part of unrelated work.
+## P1 — Privacy and public asset exposure
 
-### P1 — Add automated tests before major refactoring
+### PDFs are tracked in the public repository root
 
-**Evidence:** The package scripts and CI workflow currently provide a frontend production build, backend JavaScript syntax checks, and Prisma schema validation. No test scripts or test files were present in the audited tree.
+The Git tree contains:
 
-**Risk:** A successful build does not verify API behavior, admin authorization, form validation, data mapping, or regressions.
+- `public/resume.pdf` (approximately 475 KB)
+- `public/sample-report.pdf` (approximately 6.5 MB)
 
-**Recommendation:** Add backend tests for authentication/authorization and CRUD validation first, then frontend tests for critical public/admin flows. Add tests to CI and keep deployment blocked on failures.
+The repository is public, so these files are downloadable from GitHub even though the active Netlify build uses `frontend/` and does not publish the root-level `public/` directory. Confirm the resume is intentionally public. Inspect the sample report for client names, property addresses, loan/application identifiers, signatures, contact details, or other confidential appraisal information. Remove sensitive material from the repository and assess Git-history cleanup if needed.
 
-### P1 — Strengthen admin authentication protections
+### Active frontend asset paths do not match tracked PDF paths
 
-**Evidence:** The frontend API helper reads `admin_token` from `localStorage` and sends it as a Bearer token. The backend verifies JWTs and checks the `ADMIN` role. The login route is present; no login rate-limiting middleware was observed in the audited route/server setup.
+The active `frontend/src/App.jsx` links to `/sample-report.pdf`; its default resume URL is `/resume.pdf`. The matching PDFs are present under root `public/`, not `frontend/public/`. With Netlify's current `base = "frontend"`, root-level assets are not part of the published `dist` directory. Unless the production Site Settings point to an external URL or another deployed asset, these links will not resolve.
 
-**Risk:** A successful cross-site scripting issue could expose a localStorage token. Unrestricted login attempts increase brute-force risk.
+**Required action:** decide which documents are meant to be public, place only approved public assets under `frontend/public/` or a proper asset host, and verify both links after deployment.
 
-**Recommendation:** Add login rate limiting and security tests. Evaluate a secure HttpOnly cookie session with an appropriate CSRF strategy as a separately planned change; do not switch token transport without coordinating frontend, backend, and deployment behavior.
+## P1 — Functional issue: profile image upload exceeds API limit
 
-### P2 — Break large frontend entry components into feature modules
+`frontend/src/admin/components/SiteSettingsManager.jsx` allows an image up to 3 MB and converts it to a Base64 data URL in the `heroImage` field. Base64 increases payload size by roughly one third. The Express server accepts JSON bodies up to 1 MB. Therefore, a file allowed by the UI can exceed the API limit and fail when Website Settings are saved.
 
-**Evidence:** `frontend/src/App.jsx` is approximately 45 KB and `frontend/src/AdminApp.jsx` approximately 25 KB. Admin resource configuration, resource CRUD, About, Site Settings, login, navigation, and route rendering currently live together in `AdminApp.jsx`.
+Storing Base64 image data in the public Site Settings record also increases database size and every public settings response.
 
-**Risk:** Changes to one feature can create unintended side effects in unrelated screens, and the files are harder to test and review.
+**Recommended fix:** replace the data-URL workflow with a validated upload endpoint and object storage. As an interim fix only, reduce the client-side maximum to safely below the 1 MB request limit and clearly communicate the restriction.
 
-**Recommendation:** Extract one area at a time into `features/<feature>/` modules, keeping current routes, API payloads, and visual behavior unchanged. Start with admin resource managers and shared form components.
+## P1 — Backend validation is inconsistent
 
-### P2 — Improve backend separation and request validation
+Validation helpers exist for login and Admin account input, and some field checks exist in the resource controllers. Validation is not yet comprehensive:
 
-**Evidence:** Backend code is organized into routes, controllers, middleware, and Prisma library, which is a useful starting structure. Business logic and database access are primarily in controllers. No dedicated service or validation modules were present in the tree.
+- Some updates call `.trim()` on values before consistently checking that they are strings.
+- Experience and Education date parsing does not consistently reject invalid dates or impossible date ranges.
+- Numeric ordering fields are not consistently constrained to finite integers.
+- Project and Site Settings URLs do not have a common protocol/format allowlist.
+- Booleans and optional values are not consistently type-checked on every resource.
+- Unexpected type errors may become generic HTTP 500 responses rather than useful HTTP 400 validation errors.
 
-**Risk:** Validation and business rules can become inconsistent as new features are added.
+**Required action:** introduce shared schema validation for all create/update endpoints, with tests for valid input, invalid types, missing fields, boundary values, and malformed dates/URLs.
 
-**Recommendation:** Introduce feature modules with route/controller/service/validator boundaries when each feature is next changed. Add shared validation schemas and consistent API error responses incrementally.
+## P1 — Admin and authentication hardening
 
-### P2 — Improve API client resilience and request handling
+Positive controls already present:
 
-**Evidence:** `frontend/src/services/api.js` centralizes API requests and attaches the admin token. It parses JSON and throws a message for non-2xx responses.
+- bcrypt password hashing (12 rounds)
+- login input validation
+- in-process limit of 10 login attempts per client IP per 15-minute window
+- JWT verification and database-backed role checks on protected requests
+- separate `ADMIN` and `SUPER_ADMIN` authorization
+- Super Admin-only Admin Management endpoints
+- regular Admins cannot modify/delete the protected Super Admin through Admin Management
+- deleting or demoting an account revokes its protected API access
 
-**Recommendation:** Add request timeouts/AbortSignal support, handle non-JSON responses explicitly, and only set JSON content type when the request body is JSON. Preserve existing response shapes and authentication behavior during the change.
+Remaining risks:
 
-### P2 — Expand CI beyond build and syntax checks
+- The rate limiter is process-local, resets on restart, and is not shared across instances.
+- JWTs are stored in browser `localStorage`, so an XSS vulnerability could expose them.
+- `User.role` is a free-form string in Prisma, and the database does not enforce a single Super Admin. The promotion script maintains one during its own transaction, but a DB constraint/serializable promotion strategy would be stronger.
+- There is no persistent audit log for admin changes.
+- There are no full controller integration tests for every write endpoint.
 
-**Evidence:** CI runs on pushes to `main` and pull requests. It uses Node.js 20, runs `npm ci` in frontend/backend, builds the frontend, checks backend JavaScript syntax, and validates Prisma.
+**Recommended action:** review an HttpOnly cookie session design, add a shared rate-limit store before scaling, enforce role invariants in the database, and record privileged changes.
 
-**Recommendation:** Add tests, dependency/security review, and (when available) lint/type checks. Consider separating preview/deployment from validation and require checks before merging.
+## P2 — Frontend engineering and user experience
 
-### P3 — Clarify package and source-of-truth conventions
+- `frontend/src/App.jsx` is approximately 45 KB and 1,269 lines; it combines many public sections and data-loading effects. Extract sections and feature modules gradually.
+- The Admin application is already modularized into components, but shared form controls/validation remain duplicated.
+- There are no frontend unit/component or end-to-end test suites.
+- Some form labels are not associated with controls using `htmlFor`/IDs.
+- The public page has basic title/description metadata, but no complete per-page SEO, sitemap, robots policy, or social sharing metadata.
+- The public GitHub repositories section depends on the unauthenticated GitHub API and has no explicit user-facing rate-limit/error state.
+- The shared frontend API helper sets `Content-Type: application/json` even for requests without a body; this is unnecessary for simple GET requests.
 
-**Evidence:** The root package coordinates frontend/backend scripts, while frontend and backend each have their own package manifests and lockfiles. The frontend and backend manifests also reference the root package through `file:..`.
+## P2 — Contact form anti-spam
 
-**Recommendation:** Document which package manager and install commands are canonical. Keep lockfiles synchronized with manifest changes and test a clean install in CI. Avoid introducing a workspace migration until there is a clear benefit and a tested migration plan.
+The public contact form posts to Netlify Forms. The static HTML includes a honeypot declaration, but the React form does not render/submit the corresponding honeypot field. Add a verified Netlify Forms honeypot or another spam-control mechanism and test real submissions on the deployed site.
 
-### P3 — Protect private or owner-only assets
+## P2 — Repository structure and hygiene
 
-**Evidence:** The root-level `public/resume.pdf` and `public/sample-report.pdf` are tracked. The root `.gitignore` excludes paths under `frontend/public/`, but does not exclude the root-level copies. Netlify's configured base is `frontend`, so these root assets are not in the configured publish directory today.
+### Duplicate legacy frontend
 
-**Risk:** If the deployment base changes or a different build process is used, personal or sample documents could become publicly served.
+The tree contains both the active `frontend/src/` app and legacy root-level `src/`, `public/`, `index.html`, and `vite.config.js`. Netlify explicitly builds from `frontend/`. The root package also provides convenience scripts and is referenced by child packages as a local `file:..` dependency, so remove/merge the legacy copy only after checking all imports and packaging behavior.
 
-**Recommendation:** Confirm whether these files are intended to be public and whether they contain personal/client-sensitive information. If private, remove them from public asset paths and Git history as appropriate; use private storage for future admin-only files.
+### Stray root-level file
+
+The root contains a zero-byte file named `git`. It appears to be an accidental artifact and should be removed after confirming no external process depends on it.
+
+### One-off script
+
+`backend/add-skills.js` sits outside the main `src/scripts/` structure and is not exposed as a named package script. Decide whether it is still needed; if so, move it into a documented seed/import command with safe idempotency.
+
+### Tooling gaps
+
+- No Dependabot configuration was present at the time of review.
+- CI did not run dependency vulnerability audits.
+- No formatter/linter is configured.
+- No frontend tests exist.
+- CI used older GitHub Actions major versions that produced Node runtime deprecation warnings in the observed run.
 
 ## Positive foundations
 
-- Frontend and backend have separate package manifests and lockfiles.
-- Netlify explicitly builds from `frontend/`.
-- Backend has a Prisma schema and tracked migrations.
-- JWT verification and an explicit admin-role check exist.
-- Environment files are ignored and a backend `.env.example` is present.
-- The latest CI run for the audited commit completed with a successful conclusion.
+- The active deployment root is explicit in `netlify.toml`.
+- Separate frontend/backend package manifests and lockfiles exist.
+- Prisma schema changes are represented by migrations.
+- Secrets are not present in the tracked `.env.example`; real environment files are ignored.
+- Express Helmet, CORS allowlist, 1 MB JSON body limit, and protected routes are configured.
+- Backend tests cover login validation, Admin input validation, authentication/authorization middleware, and login rate limiting.
+- GitHub Actions verifies frontend build, backend syntax, backend tests, and Prisma schema validity.
+- Admin screens are split into feature components.
+- The current Super Admin role is active in the production database; role counts were verified during the audit.
 
 ## Recommended execution order
 
-1. Add backend tests and admin security protections.
-2. Verify the legacy root frontend is unused; then clean it up in a dedicated commit.
-3. Extract Admin Panel modules without changing behavior.
-4. Introduce backend validation/service boundaries incrementally.
-5. Improve the API client and expand CI.
-6. Build private admin-only tools, including the AI Resume Maker, on top of the improved structure.
+1. **Resolve database expiry and verify a restorable backup.**
+2. Review the public PDFs and confirm the intended resume/sample-report assets.
+3. Fix document URLs and the profile-image upload/body-size mismatch.
+4. Add consistent server-side schemas and controller integration tests.
+5. Add frontend component/E2E tests, lint/format, and accessibility checks.
+6. Improve JWT session handling and rate-limit storage; enforce the Super Admin invariant in the database.
+7. Clean up legacy files and improve public-site SEO/performance.
+8. Add admin audit history, draft/publish, search/filter, and further portfolio features.
 
 ## Verification snapshot
 
-- GitHub tree: 94 entries; tree response was not truncated.
-- Netlify build base: `frontend`.
-- CI: latest run for audited `main` commit completed successfully.
-- This was a source/configuration audit, not a live production penetration test or a full end-to-end test.
-
-
-## Security work completed after this audit
-
-The backend now validates login input types, email format, and maximum password length; applies an in-process limit of 10 login attempts per client IP per 15-minute window; returns HTTP 429 with a Retry-After header when the limit is reached; reduces the JSON request body limit to 1 MB; supports an explicit allowlist of comma-separated CORS origins; and has Node's built-in test runner coverage for token authentication, admin-role enforcement, login validation, and rate limiting.
-
-**Deployment note:** Set `TRUST_PROXY=1` in Render's backend environment when the service is behind Render's reverse proxy. The rate limiter is process-local; use a shared store before running multiple backend instances.
+- GitHub tree: 113 entries; recursive tree response was not truncated.
+- Main branch: 1 branch (`main`).
+- GitHub open issues: 0 at audit time.
+- Pull requests and releases: none found in the reviewed API listing.
+- CI: last reviewed checks for the Super Admin workflow and repository CI completed successfully.
+- Render API: current backend deployment reported Live.
+- Render PostgreSQL: Free plan, available at audit time, expiry reported as 2026-12-04.
+- Netlify latest production deploy: not independently verified in this audit.
