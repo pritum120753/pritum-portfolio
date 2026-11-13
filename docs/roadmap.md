@@ -34,7 +34,7 @@ This roadmap reflects the repository as reviewed on 2026-11-13. Checked items ar
 
 ## P1 — Repository and deployment hygiene
 
-- [ ] Review root-level legacy `src/`, `public/`, Vite files, and the empty root-level `git` file before cleanup.
+- [x] Remove the stray empty root-level `git` file. [ ] Review root-level legacy `src/`, `public/`, and Vite files before cleanup.
 - [ ] Review root-level `resume.pdf` and `sample-report.pdf` for intentional public disclosure and client confidentiality.
 - [ ] Fix the default resume/sample-report asset paths so they resolve from the active `frontend/` build.
 - [ ] Replace Base64 profile-image storage with validated object storage and signed/public URLs as appropriate.
