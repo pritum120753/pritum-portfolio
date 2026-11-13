@@ -10,6 +10,7 @@ Create `backend/.env` from `backend/.env.example`. Never commit real secrets.
 | `CLIENT_ORIGIN` | Backend | Allowed frontend origin for CORS; no trailing slash |
 | `PORT` | Backend | Optional HTTP port (default: `5000`) |
 | `TRUST_PROXY` | Backend | Set to `1` behind one trusted reverse proxy |
+| `ALLOW_ADMIN_PROVISIONING` | Admin setup script | Must be `1` to intentionally run one-time account provisioning; leave `0` for normal builds |
 | `ADMIN_NAME` | Admin setup script | Name used when creating or updating an account |
 | `ADMIN_EMAIL` | Admin setup script | Email used for admin login |
 | `ADMIN_PASSWORD` | Admin setup script | Strong password, minimum 12 characters |
@@ -38,7 +39,7 @@ You can do this without a local PC by using the repository's manual **Promote Su
 
 The promotion command only changes the role. It does not create a new account or reset the password. Any other account currently holding `SUPER_ADMIN` is automatically changed to regular `ADMIN`, so only one Super Admin remains. Keep the repository secrets restricted to trusted repository administrators.
 
-The older `npm run create-admin` command is for initial account provisioning or password reset. It replaces the password for the configured `ADMIN_EMAIL`; do not use it solely for promotion unless you intend to reset that password.
+The older `npm run create-admin` command is for intentional initial account provisioning or password reset. It now skips unless `ALLOW_ADMIN_PROVISIONING=1` is explicitly set. This protects normal Render builds because the current Build Command still invokes `npm run create-admin`; with the default flag unset/0, routine deployments will not reset the Super Admin password. Only set the flag for a deliberate one-time provisioning operation, then turn it off again.
 
 The Super Admin is the only account allowed to open **Admin Management** and create, edit, or delete regular Admin accounts. Regular Admins can manage portfolio content but cannot manage user accounts. Admin Management cannot edit or delete the protected Super Admin account. Both roles are checked against the database on every protected API request, so role changes take effect even for sessions with an older JWT.
 
