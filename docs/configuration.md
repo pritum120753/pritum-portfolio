@@ -26,13 +26,17 @@ Do not store passwords, secrets, private keys, or connection strings in GitHub, 
 
 ## Admin provisioning
 
-To safely promote an **existing Admin** without changing their password, set `SUPER_ADMIN_EMAIL` to that account's exact email in the backend environment and run:
+To safely promote an **existing Admin** without changing their password, run `npm run promote-super-admin` in `backend/` with `DATABASE_URL` and `SUPER_ADMIN_EMAIL` set in the environment.
 
-```bash
-npm run promote-super-admin
-```
+You can do this without a local PC by using the repository's manual **Promote Super Admin** GitHub Actions workflow:
 
-The promotion command only changes the role. It does not create a new account or reset the password. Any other account currently holding `SUPER_ADMIN` is automatically changed to regular `ADMIN`, so only one Super Admin remains.
+1. In the repository, open **Settings → Secrets and variables → Actions → New repository secret**.
+2. Add `DATABASE_URL` with the production Render PostgreSQL **External Database URL**. Do not put this value in source code, workflow inputs, or chat.
+3. Add `SUPER_ADMIN_EMAIL` with the exact email address of the existing Admin account to promote.
+4. Open **Actions → Promote Super Admin → Run workflow** and run it on `main`.
+5. Check the workflow run log for the promotion result. The script changes only the role and leaves the password unchanged.
+
+The promotion command only changes the role. It does not create a new account or reset the password. Any other account currently holding `SUPER_ADMIN` is automatically changed to regular `ADMIN`, so only one Super Admin remains. Keep the repository secrets restricted to trusted repository administrators.
 
 The older `npm run create-admin` command is for initial account provisioning or password reset. It replaces the password for the configured `ADMIN_EMAIL`; do not use it solely for promotion unless you intend to reset that password.
 
